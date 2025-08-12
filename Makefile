@@ -2,7 +2,7 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-PROJECT_NAME = ml-classification
+PROJECT_NAME = ml-default-payment-project
 PYTHON_VERSION = 3.12
 PYTHON_INTERPRETER = python
 

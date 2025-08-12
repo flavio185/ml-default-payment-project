@@ -1062,7 +1062,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ml-classification"
+name = "ml-default-payment-project"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
