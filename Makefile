@@ -72,6 +72,11 @@ data: requirements
 features: requirements
 	$(PYTHON_INTERPRETER) ml_classification/features.py
 
+## Make train
+.PHONY: train
+train: requirements
+	$(PYTHON_INTERPRETER) ml_classification/modeling/train.py
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
