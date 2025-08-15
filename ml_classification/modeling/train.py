@@ -4,7 +4,6 @@ from loguru import logger
 import mlflow
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
 import typer
 import pandas as pd
 
@@ -49,9 +48,6 @@ def main(
         input_example=X_train,
         registered_model_name="rf-churn-class-model",
     )
-    for i in tqdm(range(10), total=10):
-        if i == 9:
-            logger.info("Something happened for iteration 5.")
     logger.success("Modeling training complete.")
     # -----------------------------------------
 

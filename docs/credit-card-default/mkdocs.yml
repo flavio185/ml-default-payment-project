@@ -1,0 +1,4 @@
+site_name: Credit Card Default
+nav:
+  - Home: index.md
+  - About: about.md

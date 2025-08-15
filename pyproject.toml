@@ -21,12 +21,12 @@ dependencies = [
     "pytest",
     "python-dotenv",
     "ruff",
-    "tqdm",
     "typer",
     "pandas",
     "mlflow[extras]>=3.1.1",
     "seaborn>=0.13.2",
     "yellowbrick>=1.5",
+    "mkdocs>=1.6.1",
 ]
 requires-python = "~=3.12.0"
 
@@ -42,4 +42,9 @@ extend-select = ["I"]  # Add import sorting
 [tool.ruff.lint.isort]
 known-first-party = ["ml_classification"]
 force-sort-within-sections = true
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30.1",
+]
 

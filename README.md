@@ -4,7 +4,35 @@
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
 
-This is for testing ml classification algorithms
+## Definição do cenário
+### Contexto: 
+Instituição financeira quer reduzir perdas com inadimplência prevendo quais clientes provavelmente não pagarão a próxima fatura.
+
+### Variável alvo: 
+    default (1 = inadimplente, 0 = pagador regular).
+
+### Uso previsto: 
+Priorizar ações de cobrança, renegociação e bloqueio preventivo.
+
+## Métricas de avaliação do modelo
+
+Como é um problema de classificação desbalanceado (poucos inadimplentes comparado ao total), vamos usar:
+
+### Métricas offline:
+
+ROC-AUC (capacidade geral de discriminação).
+
+Precision@k (precisão nos k% mais arriscados).
+
+Recall@k (cobertura de inadimplentes nos k%).
+
+F1-score (equilíbrio precisão/recall).
+
+### Métrica de negócio:
+
+Custo evitado: valor total estimado que deixaria de ser perdido se as ações fossem tomadas nos clientes previstos como default.
+
+Retorno sobre investimento (ROI) das ações preventivas.
 
 ## Project Organization
 
