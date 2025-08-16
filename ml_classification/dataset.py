@@ -3,7 +3,7 @@ from pathlib import Path
 from loguru import logger
 import typer
 import pandas as pd
-from ml_classification.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
+from ml_classification.config import BRONZE_DATA_DIR
 
 app = typer.Typer()
 
@@ -12,7 +12,7 @@ app = typer.Typer()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     # input_path: Path = RAW_DATA_DIR / "dataset.csv",
-    output_path: Path = RAW_DATA_DIR / "dataset.csv",
+    output_path: Path = BRONZE_DATA_DIR / "credit_card_default.parquet",
     # ----------------------------------------------
 ):
     
@@ -25,9 +25,10 @@ def main(
         index_col=0,
     )
 
-    df.to_csv(output_path)
+    df.to_parquet(output_path)
 
-    logger.success("Downloading dataset complete.")
+    logger.success(f"Dataset saved on {BRONZE_DATA_DIR}.")
+    print(df.head())
     # -----------------------------------------
 
 

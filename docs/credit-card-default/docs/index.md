@@ -70,3 +70,38 @@ Colunas principais:
     PAY_AMT1 a PAY_AMT6 – valores pagos
 
     default – variável alvo
+
+6. Estrutura do Repositório
+```css
+.
+├── data
+│   └── bronze
+│       └── credit_card_default.parquet
+├── notebooks
+│   └── eda_day2.ipynb
+├── src
+│   ├── ingest_bronze.py
+│   └── ...
+├── README.md
+└── requirements.txt
+```
+7. Instruções de Ingestão
+
+Colocar o dataset original credit_card_default.csv na raiz do projeto.
+
+Executar:
+
+make dataset
+
+
+O arquivo tratado será salvo em data/bronze/credit_card_default.parquet.
+
+8. Próximos Passos
+
+Criar pipeline de limpeza (camada Silver).
+
+Implementar validações de dados com Great Expectations.
+
+Definir features iniciais e persistir no Feature Store.
+
+Iniciar treinamento baseline com Logistic Regression.
