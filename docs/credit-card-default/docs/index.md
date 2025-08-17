@@ -105,3 +105,15 @@ Implementar validações de dados com Great Expectations.
 Definir features iniciais e persistir no Feature Store.
 
 Iniciar treinamento baseline com Logistic Regression.
+
+### Camada Silver (Dia 3)
+
+A camada **Silver** contém os dados limpos e padronizados, prontos para análises e modelagem.  
+Transformações aplicadas:
+
+- Colunas renomeadas para `snake_case`.
+- Valores inválidos em `EDUCATION` e `MARRIAGE` tratados.
+- Tipos de dados ajustados:
+  - Variáveis categóricas (`SEX`, `EDUCATION`, `MARRIAGE`, `DEFAULT`) como `int`.
+  - Variáveis numéricas (`LIMIT_BAL`, `BILL_AMTx`, `PAY_AMTx`) como `float`.
+- Dados salvos em `/data/silver/credit_card_default.parquet`.
