@@ -11,7 +11,7 @@ df["education"] = df["education"].replace({0: 4, 5: 4, 6: 4})  # group invalids 
 df["marriage"] = df["marriage"].replace({0: 3})  # group invalid into "others"
 
 # 3. Ensure correct dtypes
-categorical_cols = ["sex", "education", "marriage", "default"]
+categorical_cols = ["sex", "education", "marriage", "default_payment_next_month"]
 df[categorical_cols] = df[categorical_cols].astype("int")
 
 float_cols = [c for c in df.columns if "bill_amt" in c or "pay_amt" in c or c == "limit_bal"]
