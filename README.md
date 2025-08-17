@@ -73,7 +73,10 @@ Retorno sobre investimento (ROI) das ações preventivas.
     │
     ├── config.py               <- Store useful variables and configuration
     │
-    ├── dataset.py              <- Scripts to download or generate data
+    ├── data_processing           
+    │    ├── bronze               <- Ingestion scripts
+    │    ├── silver               <- Cleaning/transformation scripts
+    │    └── gold                 <- Feature engineering / aggregations
     │
     ├── features.py             <- Code to create features for modeling
     │
