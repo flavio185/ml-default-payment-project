@@ -97,6 +97,11 @@ pipeline: requirements bronze silver validate gold
 .PHONY: train
 train: requirements
 	$(PYTHON_INTERPRETER) ml_classification/modeling/train.py
+	
+## Make train_baseline
+.PHONY: train_baseline
+train_baseline: requirements
+	$(PYTHON_INTERPRETER) ml_classification/modeling/train_baseline.py
 
 #################################################################################
 # Self Documenting Commands                                                     #
