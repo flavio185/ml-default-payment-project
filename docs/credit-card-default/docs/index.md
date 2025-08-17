@@ -117,3 +117,18 @@ Transformações aplicadas:
   - Variáveis categóricas (`SEX`, `EDUCATION`, `MARRIAGE`, `DEFAULT`) como `int`.
   - Variáveis numéricas (`LIMIT_BAL`, `BILL_AMTx`, `PAY_AMTx`) como `float`.
 - Dados salvos em `/data/silver/credit_card_default.parquet`.
+
+---
+
+### Camada Gold (Dia 5)
+
+A camada **Gold** contém os dados prontos para treinamento de modelos, com **features derivadas** que capturam padrões relevantes de risco de crédito.
+
+Features criadas:
+- `age_bin` → Agrupa clientes em faixas etárias (18–25, 26–35, 36–50, 50+), permitindo capturar efeitos não lineares da idade no risco de crédito.
+- `bill_trend` → Mede a diferença entre `BILL_AMT6` e `BILL_AMT1`, mostrando se a dívida está crescendo ou diminuindo ao longo do tempo.
+- `pay_ratio` → Razão entre a soma de pagamentos (`PAY_AMT1–6`) e a soma das faturas (`BILL_AMT1–6`), indicando capacidade de pagamento.
+- `utilization` → Proporção do limite de crédito utilizado (`BILL_AMT6 / LIMIT_BAL`), refletindo o nível de alavancagem do cliente.
+
+
+Dados salvos em `/data/gold/credit_card_default_features.parquet`.
