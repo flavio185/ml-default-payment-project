@@ -25,6 +25,10 @@ clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 
+## Clean artifacts (datasets, models, logs)
+.PHONY: clean_artifacts
+clean_artifacts:
+	rm -rf data/bronze/* data/silver/* data/gold/* models/* logs/*
 
 ## Lint using ruff (use `make format` to do formatting)
 .PHONY: lint
@@ -55,22 +59,39 @@ create_environment:
 	@echo ">>> Unix/macOS: source ./.venv/bin/activate"
 
 
+#################################################################################
+# PIPELINE RULES                                                                #
+#################################################################################
+
+## Ingest Bronze
+.PHONY: bronze
+bronze: 
+	$(PYTHON_INTERPRETER) data_processing/bronze/ingest_bronze.py
+
+## Clean Silver
+.PHONY: silver
+silver: 
+	$(PYTHON_INTERPRETER) data_processing/silver/clean_data.py
+
+## Validate Silver
+.PHONY: validate
+validate: 
+	$(PYTHON_INTERPRETER) data_processing/silver/validate_data.py
+
+## Create Gold Features
+.PHONY: gold
+gold: 
+	$(PYTHON_INTERPRETER) data_processing/gold/build_features.py
+
+## Run full pipeline: Bronze → Silver → Validate → Gold
+.PHONY: pipeline
+pipeline: requirements bronze silver validate gold
+	@echo ">>> Full pipeline executed successfully!"
 
 
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
-
-
-## Make dataset
-.PHONY: data
-data: requirements
-	$(PYTHON_INTERPRETER) ml_classification/dataset.py
-
-## Make features
-.PHONY: features
-features: requirements
-	$(PYTHON_INTERPRETER) ml_classification/features.py
 
 ## Make train
 .PHONY: train
