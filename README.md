@@ -44,7 +44,11 @@ Retorno sobre investimento (ROI) das ações preventivas.
 │   ├── external       <- Data from third party sources.
 │   ├── interim        <- Intermediate data that has been transformed.
 │   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
+│   └── raw            <- The original, immutable data dump.\
+├── data_processing           
+│    ├── bronze               <- Ingestion scripts
+│    ├── silver               <- Cleaning/transformation scripts
+│    └── gold                 <- Feature engineering / aggregations
 │
 ├── docs               <- A default mkdocs project; see www.mkdocs.org for details
 │
@@ -73,16 +77,18 @@ Retorno sobre investimento (ROI) das ações preventivas.
     │
     ├── config.py               <- Store useful variables and configuration
     │
-    ├── dataset.py              <- Scripts to download or generate data
     │
     ├── features.py             <- Code to create features for modeling
-    │
-    ├── modeling                
+    ├── modeling                    
     │   ├── __init__.py 
     │   ├── predict.py          <- Code to run model inference with trained models          
     │   └── train.py            <- Code to train models
     │
     └── plots.py                <- Code to create visualizations
+│
+├── logs                    <- validation logs
+│   └── validation_results.json
+
 ```
 
 --------

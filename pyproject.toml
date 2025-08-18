@@ -27,6 +27,7 @@ dependencies = [
     "seaborn>=0.13.2",
     "yellowbrick>=1.5",
     "mkdocs>=1.6.1",
+    "great-expectations>=1.5.8",
 ]
 requires-python = "~=3.12.0"
 
