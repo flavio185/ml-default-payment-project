@@ -79,12 +79,22 @@ Colunas principais:
 │       └── credit_card_default.parquet
 ├── notebooks
 │   └── eda_day2.ipynb
-├── src
-│   ├── ingest_bronze.py
+├── data_processing
+│   ├── bronze
+│   ├── silver
+│   ├── gold
 │   └── ...
+├── ml_classification
+│   └── modeling
+│       ├── train.py
+│       ├── train_gpt.py
+│       └── ...
 ├── README.md
 └── requirements.txt
 ```
+
+Para detalhes sobre o fluxo de processamento de dados, veja [data_processing.md](data_processing.md).
+Para detalhes sobre o desenvolvimento e experimentação de modelos, veja [model_development.md](model_development.md).
 7. Instruções de Ingestão
 
 Colocar o dataset original credit_card_default.csv na raiz do projeto.
@@ -96,17 +106,8 @@ make dataset
 
 O arquivo tratado será salvo em data/bronze/credit_card_default.parquet.
 
-8. Próximos Passos
 
-Criar pipeline de limpeza (camada Silver).
-
-Implementar validações de dados com Great Expectations.
-
-Definir features iniciais e persistir no Feature Store.
-
-Iniciar treinamento baseline com Logistic Regression.
-
-### Camada Silver (Dia 3)
+### Camada Silver 
 
 A camada **Silver** contém os dados limpos e padronizados, prontos para análises e modelagem.  
 Transformações aplicadas:
@@ -120,7 +121,7 @@ Transformações aplicadas:
 
 ---
 
-### Camada Gold (Dia 5)
+### Camada Gold 
 
 A camada **Gold** contém os dados prontos para treinamento de modelos, com **features derivadas** que capturam padrões relevantes de risco de crédito.
 
@@ -132,3 +133,43 @@ Features criadas:
 
 
 Dados salvos em `/data/gold/credit_card_default_features.parquet`.
+
+---
+
+## 9. Testes Automatizados
+
+O projeto possui uma suíte de testes automatizados para garantir a qualidade dos dados e dos scripts de processamento/modelagem.
+
+**Como rodar os testes:**
+
+```bash
+PYTHONPATH=. pytest --cov=data_processing --cov=ml_classification --cov-report=term-missing ./tests
+```
+
+Os testes cobrem ingestão, limpeza, validação, feature engineering e modelagem, com cobertura superior a 90%.
+
+## 10. Pipeline de Treinamento
+
+O pipeline de treino utiliza MLflow para rastreamento de experimentos e métricas.
+
+- O script principal é `ml_classification/modeling/train.py`.
+- O experimento é registrado no MLflow com o nome `credit-card-default`.
+- Durante o treino, são salvos:
+    - Métricas (ex: accuracy)
+    - Modelo treinado (RandomForest)
+    - Parâmetros do modelo
+    - Exemplo de entrada
+
+**Como executar o treino:**
+
+```bash
+PYTHONPATH=. python ml_classification/modeling/train.py
+```
+
+Os resultados podem ser visualizados na interface do MLflow:
+
+```bash
+mlflow ui
+```
+
+---
