@@ -24,7 +24,7 @@ def main(
 
     # Age binning
     bins = [17, 25, 35, 50, 120]
-    labels = ["18-25", "26-35", "36-50", "50+"]
+    labels = ["18_25", "26_35", "36_50", "50_plus"]
     df["age_bin"] = pd.cut(df["age"], bins=bins, labels=labels)
 
     # Bill trend (difference between last and first bill amount)
