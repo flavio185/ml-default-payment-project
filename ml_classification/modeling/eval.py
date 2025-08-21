@@ -1,18 +1,19 @@
 from loguru import logger
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
+    classification_report,
+    confusion_matrix,
     f1_score,
     log_loss,
-    roc_auc_score,
     precision_score,
     recall_score,
-    confusion_matrix,
-    classification_report,
-    average_precision_score
+    roc_auc_score,
 )
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 
 def precision_recall_at_k(y_true, y_scores, k=0.1):
     """Calculate precision and recall at top k% of predictions."""
@@ -22,15 +23,17 @@ def precision_recall_at_k(y_true, y_scores, k=0.1):
     recall = recall_score(y_true, y_pred)
     return precision, recall
 
+
 def plot_confusion_matrix(y_true, y_pred):
     """Generate and plot confusion matrix."""
     cm = confusion_matrix(y_true, y_pred)
     plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-    plt.title('Confusion Matrix')
-    plt.ylabel('True Label')
-    plt.xlabel('Predicted Label')
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+    plt.title("Confusion Matrix")
+    plt.ylabel("True Label")
+    plt.xlabel("Predicted Label")
     return cm
+
 
 def evaluate_model(model, X_test, y_test):
     """Comprehensive model evaluation with multiple metrics."""
@@ -50,18 +53,18 @@ def evaluate_model(model, X_test, y_test):
     # Calculate precision and recall at different thresholds
     for k in [0.01, 0.05, 0.1, 0.2]:
         precision_k, recall_k = precision_recall_at_k(y_test, y_proba, k=k)
-        metrics[f"precision_at_{int(k*100)}"] = precision_k
-        metrics[f"recall_at_{int(k*100)}"] = recall_k
+        metrics[f"precision_at_{int(k * 100)}"] = precision_k
+        metrics[f"recall_at_{int(k * 100)}"] = recall_k
 
     # Generate confusion matrix
     cm = plot_confusion_matrix(y_test, y_pred)
-    
+
     # Log all metrics
     logger.info("\nModel Performance Metrics:")
     logger.info("-" * 50)
     for metric_name, value in metrics.items():
         logger.info(f"{metric_name}: {value:.3f}")
-    
+
     # Log classification report
     logger.info("\nClassification Report:")
     logger.info("\n" + classification_report(y_test, y_pred))
