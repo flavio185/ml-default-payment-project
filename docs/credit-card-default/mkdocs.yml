@@ -1,4 +1,6 @@
 site_name: Credit Card Default
 nav:
   - Home: index.md
+  - Data Processing: data_processing.md
+  - Model Development: model_development.md
   - About: about.md
