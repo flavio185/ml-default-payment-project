@@ -1,10 +1,19 @@
-# Data
-/data/
-
 # add dvc files, but not the data they track
+!data/bronze/
+!data/silver/
+!data/gold/
 !data/bronze/*.dvc
 !data/silver/*.dvc
 !data/gold/*.dvc
+
+# Data
+data/*/*.parquet
+data/*/*.csv
+
+
+# DVC
+.dvc/
+.dvcignore
 
 # Logs
 /logs/
