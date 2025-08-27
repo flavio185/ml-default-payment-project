@@ -3,10 +3,10 @@ from matplotlib import pyplot as plt
 import mlflow
 from mlflow.models import infer_signature
 import mlflow.sklearn
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 import typer
 
+from models import logistic_regression_model, random_forest_model, svm_model
 from ml_classification.config import GOLD_DATA_DIR
 from ml_classification.modeling.data import build_preprocessor, load_data
 from ml_classification.modeling.eval import evaluate_model
@@ -14,30 +14,17 @@ from ml_classification.modeling.eval import evaluate_model
 app = typer.Typer()
 
 
-def train_logistic_regression(X_train, y_train):
-    logger.info("Training Logistic Regression baseline...")
-    model = LogisticRegression(max_iter=1000)
-    model.fit(X_train, y_train)
-    return model
-
-
-def create_pipeline(X_train):
-    model_params = {
-        "C": 1.0,
-        "max_iter": 100,
-        "solver": "liblinear",
-    }
+def create_pipeline(X_train, model):
     pipeline = Pipeline(
         steps=[
             ("preprocessor", build_preprocessor(X_train)),
-            ("classifier", LogisticRegression(**model_params)),
+            ("classifier", model),
         ]
     )
     return pipeline
 
 
-def log_experiment(pipeline, X_train, X_test, metrics, cm, experiment_name):
-    mlflow.set_experiment(experiment_name)
+def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
 
     # Params
     mlflow.log_param("train_size", X_train.shape[0])
@@ -55,8 +42,8 @@ def log_experiment(pipeline, X_train, X_test, metrics, cm, experiment_name):
     signature = infer_signature(X_train, pipeline.predict(X_train))
     mlflow.sklearn.log_model(
         pipeline,
-        name="default-payment-class-logreg",
-        registered_model_name=experiment_name,
+        name=algorithm,
+        registered_model_name="default-payment-" + algorithm.lower(),
         signature=signature,
         input_example=X_train.head(3),
     )
@@ -69,12 +56,17 @@ def log_experiment(pipeline, X_train, X_test, metrics, cm, experiment_name):
 def main(experiment_name: str = "baseline-logreg"):
     data_path = GOLD_DATA_DIR / "credit_card_default_features.parquet"
     X_train, X_test, y_train, y_test = load_data(data_path)
-    pipeline = create_pipeline(X_train)
 
-    pipeline.fit(X_train, y_train)
+    mlflow.set_experiment(experiment_name)
+    for model in [logistic_regression_model(), random_forest_model(), svm_model()]:
+        with mlflow.start_run():
+            algorithm = model.__class__.__name__
+            pipeline = create_pipeline(X_train, model)
+            
+            pipeline.fit(X_train, y_train)
 
-    metrics, cm, y_proba = evaluate_model(pipeline, X_test, y_test)
-    log_experiment(pipeline, X_train, X_test, metrics, cm, experiment_name)
+            metrics, cm, y_proba = evaluate_model(pipeline, X_test, y_test)
+            log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm)
 
 
 if __name__ == "__main__":

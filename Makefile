@@ -71,6 +71,7 @@ bronze:
 .PHONY: silver
 silver: 
 	$(PYTHON_INTERPRETER) data_processing/silver/clean_data.py
+	$(PYTHON_INTERPRETER) data_processing/silver/validate_data.py
 
 ## Validate Silver
 .PHONY: validate

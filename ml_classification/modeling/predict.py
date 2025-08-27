@@ -14,7 +14,7 @@ app = typer.Typer()
 @app.command()
 def predict(
     features_path: Path = GOLD_DATA_DIR / "credit_card_default_features.parquet",
-    model_uri: str = "models:/baseline-logreg/6",
+    model_uri: str = "models:/default-payment-svc/1",
     predictions_path: Path = PROCESSED_DATA_DIR / "inference_results.parquet",
 ):
     """Generate predictions using the trained pipeline."""

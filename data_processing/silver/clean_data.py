@@ -40,7 +40,7 @@ def main(
     SILVER_DATA_DIR.mkdir(parents=True, exist_ok=True)
     df.to_parquet(output_path, index=False)
     logger.success(f"Silver dataset saved at: {output_path}")
-
+    print(df.head())
 
 if __name__ == "__main__":
     app()
