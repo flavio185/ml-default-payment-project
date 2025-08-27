@@ -1,0 +1,5 @@
+outs:
+- md5: 76f6a69c457f07280031f1206c16e09a
+  size: 2350024
+  hash: md5
+  path: credit_card_default_features.parquet
