@@ -29,6 +29,8 @@ dependencies = [
     "mkdocs>=1.6.1",
     "great-expectations>=1.5.8",
     "pytest-cov>=6.2.1",
+    "dvc>=3.62.0",
+    "dvc-s3>=3.2.2",
 ]
 requires-python = "~=3.12.0"
 

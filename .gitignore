@@ -1,6 +1,11 @@
 # Data
 /data/
 
+# add dvc files, but not the data they track
+!data/bronze/*.dvc
+!data/silver/*.dvc
+!data/gold/*.dvc
+
 # Logs
 /logs/
 
