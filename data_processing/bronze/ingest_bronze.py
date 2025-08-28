@@ -19,6 +19,8 @@ def main(
     
     # ---- REPLACE THIS WITH YOUR OWN CODE ----
     logger.info("Downloading dataset...")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     # load the data
     df = pd.read_csv(
         dataset_source_url,

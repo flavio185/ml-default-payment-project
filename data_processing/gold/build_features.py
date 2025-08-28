@@ -14,6 +14,7 @@ def main(
     output_path: Path = GOLD_DATA_DIR / "credit_card_default_features.parquet",
 ):
     logger.info("Loading Silver dataset...")
+
     df = pd.read_parquet(input_path)
 
     # convert all columns to lowercase
@@ -40,6 +41,7 @@ def main(
 
     # ------------------------------------------------------
     logger.info(f"Saving Gold dataset to {output_path}...")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(output_path, index=False)
     logger.success("Gold dataset created successfully!")
 

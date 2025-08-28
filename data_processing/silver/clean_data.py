@@ -37,9 +37,10 @@ def main(
     df[float_cols] = df[float_cols].astype("float")
 
     # --- Save Silver ---
-    SILVER_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Saving Silver dataset to: {output_path}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(output_path, index=False)
-    logger.success(f"Silver dataset saved at: {output_path}")
+    logger.success("Silver dataset created successfully!")
     print(df.head())
 
 if __name__ == "__main__":
