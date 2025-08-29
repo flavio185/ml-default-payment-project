@@ -3,12 +3,12 @@ from matplotlib import pyplot as plt
 import mlflow
 from mlflow.models import infer_signature
 import mlflow.sklearn
+from models import logistic_regression_model, random_forest_model, svm_model
 from sklearn.pipeline import Pipeline
 import typer
+from ml_classification.config import REPORTS_DIR
 
-from models import logistic_regression_model, random_forest_model, svm_model
-from ml_classification.config import GOLD_DATA_DIR
-from ml_classification.modeling.data import build_preprocessor, load_data
+from ml_classification.modeling.data import build_preprocessor, main as load_data
 from ml_classification.modeling.eval import evaluate_model
 
 app = typer.Typer()
@@ -25,7 +25,6 @@ def create_pipeline(X_train, model):
 
 
 def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
-
     # Params
     mlflow.log_param("train_size", X_train.shape[0])
     mlflow.log_param("test_size", X_test.shape[0])
@@ -37,6 +36,12 @@ def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
     plt.savefig("confusion_matrix.png")
     mlflow.log_artifact("confusion_matrix.png")
     plt.close()
+
+    import json
+    metadata_path = REPORTS_DIR / "s3_metadata.json"
+    with open(metadata_path, "r") as f:
+        metadata_file = json.load(f)
+    mlflow.log_artifact(metadata_path)
 
     # Log the pipeline as a single model
     signature = infer_signature(X_train, pipeline.predict(X_train))
@@ -54,15 +59,14 @@ def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
 
 @app.command()
 def main(experiment_name: str = "baseline-logreg"):
-    data_path = GOLD_DATA_DIR / "credit_card_default_features.parquet"
-    X_train, X_test, y_train, y_test = load_data(data_path)
+    X_train, X_test, y_train, y_test = load_data()
 
     mlflow.set_experiment(experiment_name)
-    for model in [logistic_regression_model(), random_forest_model(), svm_model()]:
+    for model in [logistic_regression_model(), random_forest_model()]:
         with mlflow.start_run():
             algorithm = model.__class__.__name__
             pipeline = create_pipeline(X_train, model)
-            
+
             pipeline.fit(X_train, y_train)
 
             metrics, cm, y_proba = evaluate_model(pipeline, X_test, y_test)
