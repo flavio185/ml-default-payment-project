@@ -3,12 +3,13 @@ from matplotlib import pyplot as plt
 import mlflow
 from mlflow.models import infer_signature
 import mlflow.sklearn
-from models import logistic_regression_model, random_forest_model, svm_model
+from models import logistic_regression_model, random_forest_model
 from sklearn.pipeline import Pipeline
 import typer
-from ml_classification.config import REPORTS_DIR
 
-from ml_classification.modeling.data import build_preprocessor, main as load_data
+from ml_classification.config import REPORTS_DIR
+from ml_classification.modeling.data import build_preprocessor
+from ml_classification.modeling.data import main as load_data
 from ml_classification.modeling.eval import evaluate_model
 
 app = typer.Typer()
@@ -36,12 +37,16 @@ def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
     plt.savefig("confusion_matrix.png")
     mlflow.log_artifact("confusion_matrix.png")
     plt.close()
+    # log dataset URI and version as JSON
 
     import json
+
     metadata_path = REPORTS_DIR / "s3_metadata.json"
     with open(metadata_path, "r") as f:
         metadata_file = json.load(f)
-    mlflow.log_artifact(metadata_path)
+    mlflow.log_param("dataset_uri", metadata_file["s3_uri"])
+    mlflow.log_param("dataset_version", metadata_file["version_id"])
+    mlflow.log_param("dataset_last_modified", metadata_file["split_strategy"])
 
     # Log the pipeline as a single model
     signature = infer_signature(X_train, pipeline.predict(X_train))
