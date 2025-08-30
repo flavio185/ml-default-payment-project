@@ -6,16 +6,13 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        uses: astral-sh/setup-uv@v6
 
-      - name: Create uv environment
-        run: uv venv --python 3.12
-
-      - name: Activate environment
-        run: source .venv/bin/activate
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
 
       - name: Sync dependencies
         run: |

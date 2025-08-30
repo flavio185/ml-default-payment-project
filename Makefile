@@ -33,15 +33,14 @@ clean_artifacts:
 ## Lint using ruff (use `make format` to do formatting)
 .PHONY: lint
 lint:
-	which ruff
-	ruff format --check
-	ruff check
+	uv run ruff format --check
+	uv run ruff check
 
 ## Format source code with ruff
 .PHONY: format
 format:
-	ruff check --fix
-	ruff format
+	uv run ruff check --fix
+	uv run ruff format
 
 
 
