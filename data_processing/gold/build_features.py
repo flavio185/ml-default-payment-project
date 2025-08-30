@@ -3,19 +3,21 @@ import pandas as pd
 from loguru import logger
 import typer
 
-from ml_classification.config import SILVER_DATA_DIR, GOLD_DATA_DIR
+from ml_classification.config import S3_BUCKET
 
 app = typer.Typer()
 
 
 @app.command()
 def main(
-    input_path: Path = SILVER_DATA_DIR / "credit_card_default.parquet",
-    output_path: Path = GOLD_DATA_DIR / "credit_card_default_features.parquet",
+    input_path: str = "s3://"+ S3_BUCKET +"/silver/credit_card_default.parquet",
+    output_path: str = "s3://"+ S3_BUCKET +"/gold/credit_card_default_features.parquet",
 ):
     logger.info("Loading Silver dataset...")
 
-    df = pd.read_parquet(input_path)
+    df = pd.read_parquet(
+        input_path, storage_options={"anon": False}
+    )
 
     # convert all columns to lowercase
     df.columns = df.columns.str.lower()
@@ -41,8 +43,8 @@ def main(
 
     # ------------------------------------------------------
     logger.info(f"Saving Gold dataset to {output_path}...")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(output_path, index=False)
+    df.to_parquet(output_path, index=False,  storage_options={"anon": False})
+
     logger.success("Gold dataset created successfully!")
 
 

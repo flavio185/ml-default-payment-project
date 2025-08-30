@@ -8,8 +8,7 @@ from sklearn.pipeline import Pipeline
 import typer
 
 from ml_classification.config import REPORTS_DIR
-from ml_classification.modeling.data import build_preprocessor
-from ml_classification.modeling.data import main as load_data
+from ml_classification.modeling.data import build_preprocessor, load_data
 from ml_classification.modeling.eval import evaluate_model
 
 app = typer.Typer()
