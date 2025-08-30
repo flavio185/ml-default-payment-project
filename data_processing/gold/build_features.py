@@ -3,6 +3,7 @@ import pandas as pd
 from loguru import logger
 import typer
 
+from data_processing.check_s3 import wait_for_s3_object
 from ml_classification.config import S3_BUCKET
 
 app = typer.Typer()
@@ -14,7 +15,7 @@ def main(
     output_path: str = "s3://"+ S3_BUCKET +"/gold/credit_card_default_features.parquet",
 ):
     logger.info("Loading Silver dataset...")
-
+    wait_for_s3_object(S3_BUCKET, "silver/credit_card_default.parquet", timeout=60)
     df = pd.read_parquet(
         input_path, storage_options={"anon": False}
     )

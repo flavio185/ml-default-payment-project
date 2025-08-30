@@ -33,21 +33,21 @@ clean_artifacts:
 ## Lint using ruff (use `make format` to do formatting)
 .PHONY: lint
 lint:
-	ruff format --check
-	ruff check
+	uv run ruff format --check
+	uv run ruff check
 
 ## Format source code with ruff
 .PHONY: format
 format:
-	ruff check --fix
-	ruff format
+	uv run ruff check --fix
+	uv run ruff format
 
 
 
 ## Run tests
 .PHONY: test
 test:
-	PYTHONPATH=. python -m pytest --cov=data_processing --cov=ml_classification --cov-report=term-missing tests/
+	uv run pytest --cov=data_processing --cov=ml_classification --cov-report=term-missing tests/
 
 ## Set up Python interpreter environment
 .PHONY: create_environment
@@ -65,27 +65,26 @@ create_environment:
 ## Ingest Bronze
 .PHONY: bronze
 bronze: 
-	$(PYTHON_INTERPRETER) data_processing/bronze/ingest_bronze.py
+	uv run data_processing/bronze/ingest_bronze.py
 
 ## Clean Silver
 .PHONY: silver
 silver: 
-	$(PYTHON_INTERPRETER) data_processing/silver/clean_data.py
-	$(PYTHON_INTERPRETER) data_processing/silver/validate_data.py
+	uv run data_processing/silver/clean_data.py
 
 ## Validate Silver
-.PHONY: validate
+.PHONY: 
 validate: 
-	$(PYTHON_INTERPRETER) data_processing/silver/validate_data.py
+	uv run data_processing/silver/validate_data.py
 
 ## Create Gold Features
 .PHONY: gold
-gold: 
-	$(PYTHON_INTERPRETER) data_processing/gold/build_features.py
+gold: validate
+	uv run data_processing/gold/build_features.py
 
 ## Run full pipeline: Bronze → Silver → Validate → Gold
 .PHONY: pipeline
-pipeline: requirements bronze silver validate gold
+pipeline: requirements bronze silver gold
 	@echo ">>> Full pipeline executed successfully!"
 
 
@@ -96,7 +95,7 @@ pipeline: requirements bronze silver validate gold
 ## Make train
 .PHONY: train
 train: requirements
-	$(PYTHON_INTERPRETER) ml_classification/modeling/train.py
+	uv runml_classification/modeling/train.py
 
 #################################################################################
 # Self Documenting Commands                                                     #
@@ -114,4 +113,4 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 help:
-	@$(PYTHON_INTERPRETER) -c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)
+	@uv run-c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)
