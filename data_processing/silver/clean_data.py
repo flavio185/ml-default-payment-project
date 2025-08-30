@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import typer
 from loguru import logger
-
+from data_processing.check_s3 import wait_for_s3_object
 from ml_classification.config import S3_BUCKET
 
 app = typer.Typer()
@@ -17,8 +17,9 @@ def main(
     Day 3 – Silver Layer Cleaning
     Load Bronze dataset, apply minimal cleaning, and save to Silver.
     """
-
     logger.info(f"Loading Bronze dataset from: {input_path}")
+    wait_for_s3_object(S3_BUCKET, "bronze/credit_card_default.parquet", timeout=60)
+    
     df = pd.read_parquet(
         input_path, storage_options={"anon": False}
     )

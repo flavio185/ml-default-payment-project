@@ -7,6 +7,7 @@ import sys
 import json
 from datetime import datetime
 
+from data_processing.check_s3 import wait_for_s3_object
 from ml_classification.config import S3_BUCKET, VALIDATION_REPORTS_DIR
 
 app = typer.Typer()
@@ -21,8 +22,8 @@ def main(
     Day 4 – Data Validation
     Validate Silver dataset using Great Expectations before moving to Gold.
     """
-
     logger.info(f"Loading Silver dataset from: {input_path}")
+    wait_for_s3_object(S3_BUCKET, "silver/credit_card_default.parquet", timeout=60)
     
     df = pd.read_parquet(
         input_path, storage_options={"anon": False}

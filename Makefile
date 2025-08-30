@@ -65,22 +65,22 @@ create_environment:
 ## Ingest Bronze
 .PHONY: bronze
 bronze: 
-	uv rundata_processing/bronze/ingest_bronze.py
+	uv run data_processing/bronze/ingest_bronze.py
 
 ## Clean Silver
 .PHONY: silver
 silver: 
-	uv rundata_processing/silver/clean_data.py
+	uv run data_processing/silver/clean_data.py
 
 ## Validate Silver
-.PHONY: validate
+.PHONY: 
 validate: 
-	uv rundata_processing/silver/validate_data.py
+	uv run data_processing/silver/validate_data.py
 
 ## Create Gold Features
 .PHONY: gold
-gold: 
-	uv rundata_processing/gold/build_features.py
+gold: validate
+	uv run data_processing/gold/build_features.py
 
 ## Run full pipeline: Bronze → Silver → Validate → Gold
 .PHONY: pipeline
