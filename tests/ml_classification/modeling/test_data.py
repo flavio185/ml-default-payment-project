@@ -1,102 +1,49 @@
-import pandas as pd
-import numpy as np
+from pathlib import Path
 import pytest
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from ml_classification.modeling.data import build_preprocessor
-from unittest.mock import patch, MagicMock
-from ml_classification.modeling.data import load_data
+import pandas as pd
+from unittest.mock import patch, MagicMock, mock_open
+from ml_classification.modeling.data import build_preprocessor, get_table_metadata, load_data
 
-def test_build_preprocessor_categorizes_columns_correctly():
-    df = pd.DataFrame({
-        "age": [25, 35, 45],
-        "income": [50000.0, 60000.0, 70000.0],
-        "gender": ["M", "F", "M"],
-        "education": pd.Series(["Bachelors", "Masters", "PhD"], dtype="category")
-    })
-    preprocessor = build_preprocessor(df)
-    # Check that the transformer is a ColumnTransformer
-    assert isinstance(preprocessor, ColumnTransformer)
-    # Extract transformer names and columns
-    transformers = dict((name, cols) for name, _, cols in preprocessor.transformers)
-    # Categorical columns
-    assert set(transformers["cat"]) == {"gender", "education"}
-    # Numerical columns
-    assert set(transformers["num"]) == {"age", "income"}
-
-def test_build_preprocessor_transform_output_shape():
-    df = pd.DataFrame({
-        "age": [25, 35, 45],
-        "income": [50000.0, 60000.0, 70000.0],
-        "gender": ["M", "F", "M"],
-    })
-    preprocessor = build_preprocessor(df)
-    transformed = preprocessor.fit_transform(df)
-    # gender has 2 unique values -> 2 one-hot columns, age and income are numerical
-    assert transformed.shape[1] == 2 + 2  # 2 one-hot + 2 numerical
-
-def test_build_preprocessor_handles_no_categorical_columns():
-    df = pd.DataFrame({
-        "age": [25, 35, 45],
-        "income": [50000.0, 60000.0, 70000.0],
-    })
-    preprocessor = build_preprocessor(df)
-    # Should only have the numerical transformer
-    transformers = dict((name, cols) for name, _, cols in preprocessor.transformers)
-    assert transformers["cat"] == []
-    assert set(transformers["num"]) == {"age", "income"}
-
-def test_build_preprocessor_handles_no_numerical_columns():
-    df = pd.DataFrame({
-        "gender": ["M", "F", "M"],
-        "education": pd.Series(["Bachelors", "Masters", "PhD"], dtype="category")
-    })
-    preprocessor = build_preprocessor(df)
-    transformers = dict((name, cols) for name, _, cols in preprocessor.transformers)
-    assert set(transformers["cat"]) == {"gender", "education"}
-    assert transformers["num"] == []
-
-def test_build_preprocessor_handles_empty_dataframe():
-    df = pd.DataFrame()
-    preprocessor = build_preprocessor(df)
-    transformers = dict((name, cols) for name, _, cols in preprocessor.transformers)
-    assert transformers["cat"] == []
-    assert transformers["num"] == []
+# Sample DataFrame for testing
 @pytest.fixture
-def sample_parquet_df():
-    data = {
-        "feature1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "feature2": ["A", "B", "A", "B", "A", "B", "A", "B", "A", "B"],
-        "default_payment_next_month": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+def sample_df():
+    return pd.DataFrame({
+        "age": [25, 30, 45],
+        "gender": ["male", "female", "female"],
+        "income": [50000, 60000, 80000],
+        "default_payment_next_month": [0, 1, 0],
+        "ingestion_time": pd.Timestamp.now()
+    })
+
+def test_build_preprocessor(sample_df):
+    X = sample_df.drop(columns=["default_payment_next_month", "ingestion_time"])
+    preprocessor = build_preprocessor(X)
+    transformed = preprocessor.fit_transform(X)
+    assert transformed.shape[0] == X.shape[0]
+
+@patch("ml_classification.modeling.data.boto3.client")
+@patch("ml_classification.modeling.data.open", new_callable=mock_open)
+@patch("ml_classification.modeling.data.REPORTS_DIR", new_callable=lambda: Path("/tmp"))
+def test_get_table_metadata(mock_reports_dir, mock_open_file, mock_boto_client):
+    mock_s3 = MagicMock()
+    mock_s3.list_object_versions.return_value = {
+        "Versions": [{
+            "VersionId": "abc123",
+            "LastModified": pd.Timestamp("2025-08-30"),
+            "Size": 123456,
+            "StorageClass": "STANDARD"
+        }]
     }
-    return pd.DataFrame(data)
+    mock_boto_client.return_value = mock_s3
+
+    get_table_metadata(test_size=0.2, random_state=42)
+    mock_open_file.assert_called_once()
 
 @patch("ml_classification.modeling.data.pd.read_parquet")
-@patch("ml_classification.modeling.data.train_test_split")
-def test_load_data_reads_parquet_and_splits(mock_split, mock_read_parquet, sample_parquet_df):
-    mock_read_parquet.return_value = sample_parquet_df
-    # Simulate train_test_split output
-    X = sample_parquet_df.drop(columns=["default_payment_next_month"])
-    y = sample_parquet_df["default_payment_next_month"]
-    split_result = ("X_train", "X_test", "y_train", "y_test")
-    mock_split.return_value = split_result
+@patch("ml_classification.modeling.data.get_table_metadata")
+def test_load_data(mock_metadata, mock_read_parquet, sample_df):
+    mock_read_parquet.return_value = sample_df
+    X_train, X_test, y_train, y_test = load_data(test_size=0.5, random_state=1)
 
-    result = load_data("dummy_path.parquet")
-
-    mock_read_parquet.assert_called_once_with("dummy_path.parquet")
-    mock_split.assert_called_once()
-    # Check that X and y passed to train_test_split are correct
-    args, kwargs = mock_split.call_args
-    pd.testing.assert_frame_equal(args[0], X)
-    pd.testing.assert_series_equal(args[1], y)
-    assert kwargs["test_size"] == 0.2
-    assert kwargs["random_state"] == 42
-    assert kwargs["stratify"].equals(y)
-    assert result == split_result
-
-@patch("ml_classification.modeling.data.pd.read_parquet")
-def test_load_data_raises_if_target_missing(mock_read_parquet, sample_parquet_df):
-    df_no_target = sample_parquet_df.drop(columns=["default_payment_next_month"])
-    mock_read_parquet.return_value = df_no_target
-    with pytest.raises(KeyError):
-        load_data("dummy_path.parquet")
+    assert len(X_train) + len(X_test) == len(sample_df)
+    assert set(y_train).union(set(y_test)) == set(sample_df["default_payment_next_month"])

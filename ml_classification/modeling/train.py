@@ -3,13 +3,13 @@ from matplotlib import pyplot as plt
 import mlflow
 from mlflow.models import infer_signature
 import mlflow.sklearn
-from models import logistic_regression_model, random_forest_model
 from sklearn.pipeline import Pipeline
 import typer
 
 from ml_classification.config import REPORTS_DIR
 from ml_classification.modeling.data import build_preprocessor, load_data
 from ml_classification.modeling.eval import evaluate_model
+from ml_classification.modeling.models import logistic_regression_model, random_forest_model
 
 app = typer.Typer()
 

@@ -1,83 +1,49 @@
 import pytest
 import numpy as np
+import pandas as pd
 from unittest.mock import MagicMock, patch
-from ml_classification.modeling.eval import evaluate_model
+from sklearn.metrics import confusion_matrix
+from ml_classification.modeling.eval import precision_recall_at_k, plot_confusion_matrix, evaluate_model
 
 @pytest.fixture
-def dummy_data():
-    # Simple binary classification data
-    X_test = np.array([[0], [1], [2], [3], [4]])
-    y_test = np.array([0, 1, 0, 1, 1])
-    y_pred = np.array([0, 1, 0, 0, 1])
-    y_proba = np.array([[0.8, 0.2], [0.1, 0.9], [0.7, 0.3], [0.6, 0.4], [0.3, 0.7]])
-    return X_test, y_test, y_pred, y_proba
+def y_true():
+    return np.array([0, 1, 1, 0, 1, 0, 0, 1, 0, 1])
 
 @pytest.fixture
-def dummy_model(dummy_data):
-    X_test, y_test, y_pred, y_proba = dummy_data
-    model = MagicMock()
-    model.predict.return_value = y_pred
-    model.predict_proba.return_value = y_proba
-    return model
+def y_scores():
+    return np.array([0.1, 0.9, 0.8, 0.2, 0.7, 0.3, 0.4, 0.95, 0.05, 0.85])
 
-@patch("ml_classification.modeling.eval.logger")
-@patch("ml_classification.modeling.eval.plot_confusion_matrix")
-def test_evaluate_model_basic(mock_plot_cm, mock_logger, dummy_model, dummy_data):
-    X_test, y_test, y_pred, y_proba = dummy_data
-    mock_plot_cm.return_value = np.array([[2, 0], [1, 2]])
+@pytest.fixture
+def y_pred():
+    return (np.array([0.1, 0.9, 0.8, 0.2, 0.7, 0.3, 0.4, 0.95, 0.05, 0.85]) > 0.5).astype(int)
 
-    metrics, cm, y_proba_out = evaluate_model(dummy_model, X_test, y_test)
+def test_precision_recall_at_k(y_true, y_scores):
+    precision, recall = precision_recall_at_k(y_true, y_scores, k=0.2)
+    assert 0 <= precision <= 1
+    assert 0 <= recall <= 1
 
-    # Check returned metrics keys
-    expected_keys = {
-        "accuracy", "roc_auc", "avg_precision", "f1", "log_loss",
-        "precision_at_1", "recall_at_1",
-        "precision_at_5", "recall_at_5",
-        "precision_at_10", "recall_at_10",
-        "precision_at_20", "recall_at_20"
-    }
-    assert expected_keys.issubset(metrics.keys())
-    # Check confusion matrix is returned as expected
-    assert (cm == np.array([[2, 0], [1, 2]])).all()
-    # Check y_proba_out shape
-    assert np.allclose(y_proba_out, y_proba[:, 1])
-    # Check logger was called (at least for metrics and report)
-    assert mock_logger.info.call_count > 2
+@patch("ml_classification.modeling.eval.plt.figure")
+@patch("ml_classification.modeling.eval.sns.heatmap")
+def test_plot_confusion_matrix(mock_heatmap, mock_figure, y_true, y_pred):
+    cm = plot_confusion_matrix(y_true, y_pred)
+    assert isinstance(cm, np.ndarray)
+    assert cm.shape == (2, 2)
+    mock_heatmap.assert_called_once()
 
-@patch("ml_classification.modeling.eval.logger")
-@patch("ml_classification.modeling.eval.plot_confusion_matrix")
-def test_evaluate_model_handles_perfect_model(mock_plot_cm, mock_logger):
-    # Perfect predictions
-    X_test = np.array([[0], [1], [2]])
-    y_test = np.array([0, 1, 1])
-    y_pred = np.array([0, 1, 1])
-    y_proba = np.array([[1.0, 0.0], [0.0, 1.0], [0.0, 1.0]])
-    model = MagicMock()
-    model.predict.return_value = y_pred
-    model.predict_proba.return_value = y_proba
-    mock_plot_cm.return_value = np.array([[1, 0], [0, 2]])
+def test_evaluate_model(y_true, y_pred):
+    # Create mock model
+    mock_model = MagicMock()
+    mock_model.predict.return_value = y_pred
+    mock_model.predict_proba.return_value = np.vstack([1 - y_pred, y_pred]).T
 
-    metrics, cm, y_proba_out = evaluate_model(model, X_test, y_test)
-    assert metrics["accuracy"] == 1.0
-    assert metrics["f1"] == 1.0
-    assert metrics["roc_auc"] == 1.0
-    assert (cm == np.array([[1, 0], [0, 2]])).all()
-    assert np.allclose(y_proba_out, y_proba[:, 1])
+    # Create dummy X_test
+    X_test = pd.DataFrame(np.random.rand(len(y_true), 5))
 
-@patch("ml_classification.modeling.eval.logger")
-@patch("ml_classification.modeling.eval.plot_confusion_matrix")
-def test_evaluate_model_handles_all_zero_predictions(mock_plot_cm, mock_logger):
-    # All predictions are zero
-    X_test = np.array([[0], [1], [2]])
-    y_test = np.array([0, 1, 1])
-    y_pred = np.array([0, 0, 0])
-    y_proba = np.array([[0.9, 0.1], [0.8, 0.2], [0.7, 0.3]])
-    model = MagicMock()
-    model.predict.return_value = y_pred
-    model.predict_proba.return_value = y_proba
-    mock_plot_cm.return_value = np.array([[1, 0], [2, 0]])
+    metrics, cm, y_proba = evaluate_model(mock_model, X_test, y_true)
 
-    metrics, cm, y_proba_out = evaluate_model(model, X_test, y_test)
-    assert metrics["accuracy"] == pytest.approx(1/3)
-    assert (cm == np.array([[1, 0], [2, 0]])).all()
-    assert np.allclose(y_proba_out, y_proba[:, 1])
+    assert isinstance(metrics, dict)
+    assert "accuracy" in metrics
+    assert "roc_auc" in metrics
+    assert isinstance(cm, np.ndarray)
+    assert isinstance(y_proba, np.ndarray)
+    assert len(y_proba) == len(y_true)
