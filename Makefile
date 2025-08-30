@@ -47,7 +47,7 @@ format:
 ## Run tests
 .PHONY: test
 test:
-	python -m pytest --cov=data_processing --cov=ml_classification --cov-report=term-missing tests/
+	PYTHONPATH=. python -m pytest --cov=data_processing --cov=ml_classification --cov-report=term-missing tests/
 
 ## Set up Python interpreter environment
 .PHONY: create_environment
@@ -71,6 +71,7 @@ bronze:
 .PHONY: silver
 silver: 
 	$(PYTHON_INTERPRETER) data_processing/silver/clean_data.py
+	$(PYTHON_INTERPRETER) data_processing/silver/validate_data.py
 
 ## Validate Silver
 .PHONY: validate

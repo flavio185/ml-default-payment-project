@@ -3,15 +3,15 @@ import pandas as pd
 import typer
 from loguru import logger
 
-from ml_classification.config import BRONZE_DATA_DIR, SILVER_DATA_DIR
+from ml_classification.config import S3_BUCKET
 
 app = typer.Typer()
 
 
 @app.command()
 def main(
-    input_path: Path = BRONZE_DATA_DIR / "credit_card_default.parquet",
-    output_path: Path = SILVER_DATA_DIR / "credit_card_default.parquet",
+    input_path: str = "s3://"+ S3_BUCKET + "/bronze/credit_card_default.parquet",
+    output_path: str = "s3://"+ S3_BUCKET +"/silver/credit_card_default.parquet",
 ):
     """
     Day 3 – Silver Layer Cleaning
@@ -19,7 +19,9 @@ def main(
     """
 
     logger.info(f"Loading Bronze dataset from: {input_path}")
-    df = pd.read_parquet(input_path)
+    df = pd.read_parquet(
+        input_path, storage_options={"anon": False}
+    )
 
     # --- Cleaning steps ---
     logger.info("Renaming columns to snake_case...")
@@ -37,10 +39,12 @@ def main(
     df[float_cols] = df[float_cols].astype("float")
 
     # --- Save Silver ---
-    SILVER_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(output_path, index=False)
-    logger.success(f"Silver dataset saved at: {output_path}")
-
+    logger.info(f"Saving Silver dataset to: {output_path}")
+    df.to_parquet(
+        output_path, index=False, storage_options={"anon": False}
+        )
+    logger.success("Silver dataset created successfully!")
+    print(df.head())
 
 if __name__ == "__main__":
     app()

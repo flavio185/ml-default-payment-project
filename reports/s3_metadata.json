@@ -1,0 +1,8 @@
+{
+    "s3_uri": "s3://datamasters2025/gold/credit_card_default_features.parquet",
+    "version_id": "null",
+    "last_modified": "2025-08-27T16:35:50+00:00",
+    "size_bytes": 2350024,
+    "storage_class": "STANDARD",
+    "logged_at": "2025-08-29T04:57:42.451559"
+}

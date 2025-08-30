@@ -18,9 +18,13 @@ EXTERNAL_DATA_DIR = DATA_DIR / "external"
 BRONZE_DATA_DIR = DATA_DIR / "bronze"
 SILVER_DATA_DIR = DATA_DIR / "silver"
 GOLD_DATA_DIR = DATA_DIR / "gold"
+S3_BUCKET = "datamasters2025"
+VALIDATION_REPORTS_DIR = DATA_DIR / "validation_reports"
 
 MODELS_DIR = PROJ_ROOT / "models"
 LOGS_DIR = PROJ_ROOT / "logs"
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
+
+AWS_SHARED_CREDENTIALS_FILE = PROJ_ROOT / ".aws/credentials"

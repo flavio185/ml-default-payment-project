@@ -7,15 +7,15 @@ import sys
 import json
 from datetime import datetime
 
-from ml_classification.config import SILVER_DATA_DIR, LOGS_DIR
+from ml_classification.config import S3_BUCKET, VALIDATION_REPORTS_DIR
 
 app = typer.Typer()
 
 
 @app.command()
 def main(
-    input_path: Path = SILVER_DATA_DIR / "credit_card_default.parquet",
-    log_output: Path = LOGS_DIR / f"validation_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+    input_path: str = "s3://"+ S3_BUCKET +"/silver/credit_card_default.parquet",
+    log_output: Path = VALIDATION_REPORTS_DIR / f"validation_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
 ):
     """
     Day 4 – Data Validation
@@ -24,7 +24,9 @@ def main(
 
     logger.info(f"Loading Silver dataset from: {input_path}")
     
-    df = pd.read_parquet(input_path)
+    df = pd.read_parquet(
+        input_path, storage_options={"anon": False}
+    )
     if df.empty:
         logger.error("Input DataFrame is empty. Exiting validation.")
         sys.exit(1)
@@ -94,7 +96,8 @@ def main(
     logger.info("Great Expectations checks complete.")
 
     # --- Save Logs ---
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_output.parent.mkdir(parents=True, exist_ok=True)
+
     with open(log_output, "w") as f:
         json.dump(json_result, f, indent=4)
     logger.info(f"Validation log saved at: {log_output}")
