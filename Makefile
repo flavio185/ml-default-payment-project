@@ -65,22 +65,22 @@ create_environment:
 ## Ingest Bronze
 .PHONY: bronze
 bronze: 
-	$(PYTHON_INTERPRETER) data_processing/bronze/ingest_bronze.py
+	uv rundata_processing/bronze/ingest_bronze.py
 
 ## Clean Silver
 .PHONY: silver
 silver: 
-	$(PYTHON_INTERPRETER) data_processing/silver/clean_data.py
+	uv rundata_processing/silver/clean_data.py
 
 ## Validate Silver
 .PHONY: validate
 validate: 
-	$(PYTHON_INTERPRETER) data_processing/silver/validate_data.py
+	uv rundata_processing/silver/validate_data.py
 
 ## Create Gold Features
 .PHONY: gold
 gold: 
-	$(PYTHON_INTERPRETER) data_processing/gold/build_features.py
+	uv rundata_processing/gold/build_features.py
 
 ## Run full pipeline: Bronze → Silver → Validate → Gold
 .PHONY: pipeline
@@ -95,7 +95,7 @@ pipeline: requirements bronze silver gold
 ## Make train
 .PHONY: train
 train: requirements
-	$(PYTHON_INTERPRETER) ml_classification/modeling/train.py
+	uv runml_classification/modeling/train.py
 
 #################################################################################
 # Self Documenting Commands                                                     #
@@ -113,4 +113,4 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 help:
-	@$(PYTHON_INTERPRETER) -c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)
+	@uv run-c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)
