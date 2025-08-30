@@ -1,9 +1,12 @@
-name: CI Pipeline
+name: Data Pipeline
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"  # Runs daily at 2AM UTC
 
 jobs:
-  validate:
+  run-pipeline:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,9 +19,3 @@ jobs:
 
       - name: Run lint
         run: make lint
-
-      - name: Check formatting
-        run: make format --check
-
-      - name: Run tests
-        run: make test

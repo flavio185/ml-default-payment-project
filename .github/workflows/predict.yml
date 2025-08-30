@@ -1,9 +1,10 @@
-name: CI Pipeline
+name: Prediction & Evaluation
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 jobs:
-  validate:
+  predict:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,11 +15,5 @@ jobs:
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
-      - name: Run lint
-        run: make lint
-
-      - name: Check formatting
-        run: make format --check
-
-      - name: Run tests
-        run: make test
+      - name: Run prediction
+        run: make predict

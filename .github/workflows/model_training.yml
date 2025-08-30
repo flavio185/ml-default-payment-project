@@ -1,9 +1,12 @@
-name: CI Pipeline
+name: Model Training
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  validate:
+  train-model:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,11 +17,5 @@ jobs:
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
-      - name: Run lint
-        run: make lint
-
-      - name: Check formatting
-        run: make format --check
-
-      - name: Run tests
-        run: make test
+      - name: Train model
+        run: make train
