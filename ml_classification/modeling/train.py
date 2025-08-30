@@ -2,13 +2,12 @@ from pathlib import Path
 
 from loguru import logger
 import mlflow
+import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import typer
-import pandas as pd
 
-
-from ml_classification.config import MODELS_DIR, PROCESSED_DATA_DIR
+from ml_classification.config import PROCESSED_DATA_DIR
 
 app = typer.Typer()
 
@@ -19,7 +18,7 @@ def main(
     features_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
     # labels_test_path: Path = PROCESSED_DATA_DIR / "labels_test.csv",
     # features_train_path: Path = PROCESSED_DATA_DIR / "features_train.csv",
-    # labels_train_path: Path = PROCESSED_DATA_DIR / "labels_train.csv",    
+    # labels_train_path: Path = PROCESSED_DATA_DIR / "labels_train.csv",
     # model_path: Path = MODELS_DIR / "model.pkl",
     # -----------------------------------------
 ):
@@ -28,7 +27,14 @@ def main(
     mlflow.sklearn.autolog(disable=True)
     logger.info("Training some model...")
     from sklearn.ensemble import RandomForestClassifier
-    params = {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 4, 'max_features': 'sqrt', 'n_estimators': 200}
+
+    params = {
+        "class_weight": "balanced",
+        "criterion": "entropy",
+        "max_depth": 4,
+        "max_features": "sqrt",
+        "n_estimators": 200,
+    }
     df = pd.read_csv(features_path)
     y = df.default
     X = df.drop("default", axis=1)

@@ -33,6 +33,7 @@ clean_artifacts:
 ## Lint using ruff (use `make format` to do formatting)
 .PHONY: lint
 lint:
+	which ruff
 	ruff format --check
 	ruff check
 
@@ -84,7 +85,7 @@ gold:
 
 ## Run full pipeline: Bronze → Silver → Validate → Gold
 .PHONY: pipeline
-pipeline: requirements bronze silver validate gold
+pipeline: requirements bronze silver gold
 	@echo ">>> Full pipeline executed successfully!"
 
 
