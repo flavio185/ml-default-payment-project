@@ -18,10 +18,14 @@ jobs:
         run: source .venv/bin/activate
 
       - name: Sync dependencies
-        run: uv sync
+        run: |
+          which python
+          uv sync
 
       - name: Run lint
-        run: make lint
+        run: |
+          source .venv/bin/activate
+          make lint
 
       - name: Check formatting
         run: make format --check
