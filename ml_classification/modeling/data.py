@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 import typer
 
-from ml_classification.config import REPORTS_DIR, S3_BUCKET
+from ml_classification.config import S3_BUCKET
 
 app = typer.Typer()
 
@@ -54,18 +54,14 @@ def get_table_metadata(test_size, random_state):
             "random_state": random_state,
         },
     }
-    # save metadata to a json file
-    with open(REPORTS_DIR / "s3_metadata.json", "w") as f:
-        import json
-
-        json.dump(metadata, f, indent=4)
+    return metadata
 
 
 @app.command()
 def load_data(test_size: float = 0.2, random_state: int = 42) -> pd.DataFrame:
     """Loads data from S3 and splits it into training and testing sets."""
     data_path = "s3://" + S3_BUCKET + "/gold/credit_card_default_features.parquet"
-    get_table_metadata(test_size, random_state)
+    metadata = get_table_metadata(test_size, random_state)
     target_col = "default_payment_next_month"
     logger.info(f"Loading dataset from: {data_path}")
 
@@ -77,7 +73,7 @@ def load_data(test_size: float = 0.2, random_state: int = 42) -> pd.DataFrame:
         X, y, test_size=test_size, random_state=random_state
     )
     logger.info("Data loading and splitting completed.")
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test, metadata
 
 
 if __name__ == "__main__":

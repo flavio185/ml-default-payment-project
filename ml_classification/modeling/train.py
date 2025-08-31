@@ -6,7 +6,6 @@ import mlflow.sklearn
 from sklearn.pipeline import Pipeline
 import typer
 
-from ml_classification.config import REPORTS_DIR
 from ml_classification.modeling.data import build_preprocessor, load_data
 from ml_classification.modeling.eval import evaluate_model
 from ml_classification.modeling.models import logistic_regression_model, random_forest_model
@@ -24,7 +23,7 @@ def create_pipeline(X_train, model):
     return pipeline
 
 
-def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
+def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm, metadata):
     # Params
     mlflow.log_param("train_size", X_train.shape[0])
     mlflow.log_param("test_size", X_test.shape[0])
@@ -36,17 +35,13 @@ def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
     plt.savefig("confusion_matrix.png")
     mlflow.log_artifact("confusion_matrix.png")
     plt.close()
-    # log dataset URI and version as JSON
 
-    import json
-
-    metadata_path = REPORTS_DIR / "s3_metadata.json"
-    with open(metadata_path, "r") as f:
-        metadata_file = json.load(f)
-    mlflow.log_param("dataset_uri", metadata_file["s3_uri"])
-    mlflow.log_param("dataset_version", metadata_file["version_id"])
-    mlflow.log_param("dataset_last_modified", metadata_file["split_strategy"])
-
+    mlflow.log_dict(metadata, "s3_metadata.json")  # saved as artifact
+    mlflow.log_params({   # also flatten for searchability
+        "dataset_uri": metadata["s3_uri"],
+        "dataset_version": metadata["version_id"],
+        "dataset_last_modified": metadata["last_modified"],
+    })
     # Log the pipeline as a single model
     signature = infer_signature(X_train, pipeline.predict(X_train))
     mlflow.sklearn.log_model(
@@ -63,7 +58,7 @@ def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm):
 
 @app.command()
 def main(experiment_name: str = "baseline-logreg"):
-    X_train, X_test, y_train, y_test = load_data()
+    X_train, X_test, y_train, y_test, metadata = load_data()
 
     mlflow.set_experiment(experiment_name)
     for model in [logistic_regression_model(), random_forest_model()]:
@@ -74,8 +69,7 @@ def main(experiment_name: str = "baseline-logreg"):
             pipeline.fit(X_train, y_train)
 
             metrics, cm, y_proba = evaluate_model(pipeline, X_test, y_test)
-            log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm)
-
+            log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm, metadata)
 
 if __name__ == "__main__":
     app()
