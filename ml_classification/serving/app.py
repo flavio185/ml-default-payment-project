@@ -1,12 +1,14 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Any
 from datetime import datetime
-import pandas as pd
-import mlflow
+from typing import Any, Dict, List
+
+from fastapi import FastAPI, HTTPException
 from loguru import logger
+import mlflow
+import pandas as pd
+from pydantic import BaseModel
 
 app = FastAPI(title="Online MLflow Inference API")
+
 
 # -----------------------------
 # Input data schema
@@ -14,8 +16,10 @@ app = FastAPI(title="Online MLflow Inference API")
 class FeatureRow(BaseModel):
     features: Dict[str, Any]
 
+
 class FeatureBatch(BaseModel):
     data: List[FeatureRow]
+
 
 # -----------------------------
 # Load MLflow model (once)
@@ -25,6 +29,7 @@ logger.info(f"Loading model from MLflow: {MODEL_URI}")
 pipeline = mlflow.sklearn.load_model(MODEL_URI)
 signature = mlflow.models.get_model_info(MODEL_URI).signature
 EXPECTED_COLS = [c.name for c in signature.inputs]
+
 
 # -----------------------------
 # Online inference endpoint
@@ -44,10 +49,7 @@ def predict(batch: FeatureBatch):
     # Align columns to model signature
     missing_cols = set(EXPECTED_COLS) - set(X.columns)
     if missing_cols:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Missing expected columns: {missing_cols}"
-        )
+        raise HTTPException(status_code=400, detail=f"Missing expected columns: {missing_cols}")
     X = X[EXPECTED_COLS]
 
     # Run predictions
@@ -61,6 +63,7 @@ def predict(batch: FeatureBatch):
     results["inference_timestamp"] = datetime.utcnow().isoformat()
 
     return results.to_dict(orient="records")
+
 
 # -----------------------------
 # Optional health check

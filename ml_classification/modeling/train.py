@@ -37,11 +37,13 @@ def log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm, metadata):
     plt.close()
 
     mlflow.log_dict(metadata, "s3_metadata.json")  # saved as artifact
-    mlflow.log_params({   # also flatten for searchability
-        "dataset_uri": metadata["s3_uri"],
-        "dataset_version": metadata["version_id"],
-        "dataset_last_modified": metadata["last_modified"],
-    })
+    mlflow.log_params(
+        {  # also flatten for searchability
+            "dataset_uri": metadata["s3_uri"],
+            "dataset_version": metadata["version_id"],
+            "dataset_last_modified": metadata["last_modified"],
+        }
+    )
     # Log the pipeline as a single model
     signature = infer_signature(X_train, pipeline.predict(X_train))
     mlflow.sklearn.log_model(
@@ -70,6 +72,7 @@ def main(experiment_name: str = "baseline-logreg"):
 
             metrics, cm, y_proba = evaluate_model(pipeline, X_test, y_test)
             log_model_run(pipeline, X_train, X_test, metrics, cm, algorithm, metadata)
+
 
 if __name__ == "__main__":
     app()

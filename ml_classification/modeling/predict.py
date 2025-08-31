@@ -1,13 +1,14 @@
+import json
 from pathlib import Path
+
 from loguru import logger
 import mlflow
 import mlflow.sklearn
 import pandas as pd
 import typer
-import json
-import boto3
 
 app = typer.Typer()
+
 
 @app.command()
 def predict(

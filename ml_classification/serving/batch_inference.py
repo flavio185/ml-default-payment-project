@@ -1,17 +1,23 @@
 from datetime import datetime
+
+from loguru import logger
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-from loguru import logger
 import typer
 
 app = typer.Typer()
 
+
 @app.command()
 def batch_inference(
-    model_uri: str = typer.Argument(..., help="MLflow model URI (e.g. models:/default-payment/14)"),
+    model_uri: str = typer.Argument(
+        ..., help="MLflow model URI (e.g. models:/default-payment/14)"
+    ),
     source_table: str = typer.Argument(..., help="Input parquet/Delta/S3 path with features"),
-    destination_table: str = typer.Argument(..., help="Output parquet/Delta/S3 path for predictions"),
+    destination_table: str = typer.Argument(
+        ..., help="Output parquet/Delta/S3 path for predictions"
+    ),
 ):
     """
     Run batch inference on a table of features using an MLflow model.
@@ -23,12 +29,14 @@ def batch_inference(
     else:
         X = pd.read_parquet(source_table)
     if "default_payment_next_month" in X.columns:
-        X = X.drop(columns=["default_payment_next_month", 'ingestion_time'])  # drop labels if present
+        X = X.drop(
+            columns=["default_payment_next_month", "ingestion_time"]
+        )  # drop labels if present
     for col in X.select_dtypes(include=["object", "category"]):
         X[col] = X[col].astype(str)
     if X.columns[0] in ["Unnamed: 0", "index"]:
         X = X.drop(X.columns[0], axis=1)
-        
+
     logger.info(f"Loading model from MLflow: {model_uri}")
     pipeline = mlflow.sklearn.load_model(model_uri)
 
