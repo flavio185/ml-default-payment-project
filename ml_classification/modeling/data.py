@@ -9,8 +9,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 import typer
 
-from ml_classification.config import S3_BUCKET
-
 app = typer.Typer()
 
 
@@ -28,11 +26,11 @@ def build_preprocessor(X):
     return preprocessor
 
 
-def get_table_metadata(test_size, random_state):
-    """Gets metadata for the S3 object."""
+def get_table_metadata(data_path, test_size, random_state):
+    """Gets metadata for the object."""
     # S3 object details
-    bucket = S3_BUCKET
-    key = "gold/credit_card_default_features.parquet"
+    bucket = data_path.split("/")[2]
+    key = "/".join(data_path.split("/")[3:])
     # Initialize S3 client
     s3 = boto3.client("s3")
 
@@ -42,7 +40,7 @@ def get_table_metadata(test_size, random_state):
 
     # Build metadata dictionary
     metadata = {
-        "s3_uri": f"s3://{S3_BUCKET}/{key}",
+        "uri": data_path,
         "version_id": latest_version["VersionId"],
         "last_modified": latest_version["LastModified"].isoformat(),
         "size_bytes": latest_version["Size"],
@@ -58,11 +56,11 @@ def get_table_metadata(test_size, random_state):
 
 
 @app.command()
-def load_data(test_size: float = 0.2, random_state: int = 42) -> pd.DataFrame:
-    """Loads data from S3 and splits it into training and testing sets."""
-    data_path = "s3://" + S3_BUCKET + "/gold/credit_card_default_features.parquet"
-    metadata = get_table_metadata(test_size, random_state)
-    target_col = "default_payment_next_month"
+def load_data(data_path: str, target_col: str, test_size: float = 0.2, random_state: int = 42):
+    """Loads data, splits into train and test sets, and returns metadata."""
+    metadata = get_table_metadata(
+        data_path=data_path, test_size=test_size, random_state=random_state
+    )
     logger.info(f"Loading dataset from: {data_path}")
 
     df = pd.read_parquet(data_path, storage_options={"anon": False})
