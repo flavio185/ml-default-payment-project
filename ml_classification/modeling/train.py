@@ -67,7 +67,7 @@ def main(experiment_name: str = "baseline-logreg"):
         data_path=data_path, target_col=target_col
     )
 
-    mlflow.set_tracking_uri("http://127.0.0.1")
+    # mlflow.set_tracking_uri("http://127.0.0.1")
     mlflow.set_experiment(experiment_name)
     for model in [logistic_regression_model(), random_forest_model()]:
         with mlflow.start_run():
