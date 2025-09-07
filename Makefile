@@ -95,7 +95,7 @@ pipeline: requirements bronze silver gold
 ## Make train
 .PHONY: train
 train: requirements
-	uv runml_classification/modeling/train.py
+	uv run ml_classification/modeling/train.py
 
 #################################################################################
 # Self Documenting Commands                                                     #
