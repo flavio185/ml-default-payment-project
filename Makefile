@@ -47,7 +47,7 @@ format:
 ## Run tests
 .PHONY: test
 test:
-	uv run pytest --cov=data_processing --cov=ml_classification --cov-report=term-missing tests/
+	uv run pytest tests/
 
 ## Set up Python interpreter environment
 .PHONY: create_environment
