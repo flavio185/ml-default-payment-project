@@ -1,24 +1,137 @@
-name: CI Pipeline
-
-on: [push, pull_request]
+name: CI
+on:
+  push:
+    branches: [main, develop, feature/*, hotfix/*, release/*]
+  workflow_dispatch:
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
       - name: Install the project
-        run: uv sync --locked --all-extras --dev
+        run: make requirements
 
-      - name: Run lint
+      - name: Lint code
         run: make lint
 
-      - name: Check formatting
-        run: make format --check
-
-      - name: Run tests
+      - name: Run tests with pytest
         run: make test
+  
+  set_vars:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      AWS_REGION: ${{ steps.set_vars.outputs.AWS_REGION }}
+      AWS_S3_BUCKET: ${{ steps.set_vars.outputs.AWS_S3_BUCKET }}
+    steps:
+      - name: Set AWS_VARS
+        id: set_vars
+        run: |
+          echo "AWS_REGION=${{ vars.AWS_REGION }}" >> $GITHUB_OUTPUT
+          echo "AWS_S3_BUCKET=${{ vars.AWS_S3_BUCKET }}" >> $GITHUB_OUTPUT
+          echo "DEBUG AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}"
+  
+  build-and-upload-package:
+    if: github.ref == 'refs/heads/main'
+    needs: [build, set_vars]
+    runs-on: ubuntu-latest
+    outputs:
+      PACKAGE_NAME: ${{ steps.package.outputs.PACKAGE_NAME }}
+    steps:
+      - name: Checkout source code 
+        uses: actions/checkout@v4
+
+      - name: Install gettext-base, and zip
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext-base zip
+
+      - name: Generate all job files
+        id: generate-files
+        env:
+          AWS_S3_BUCKET: ${{ inputs.AWS_S3_BUCKET }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          curl -o ray-job-template.yml https://raw.githubusercontent.com/flavio185/reusable-workflows/refs/heads/main/Ray/ray-job.yml
+          # Cria um diretório para os manifestos gerados
+          mkdir -p generated-manifests
+          config_file="conf/job_config.json"
+          jobs_json=$(jq '.job' $config_file)
+          num_jobs=$(echo "$jobs_json" | jq 'length')
+          echo "Found $num_jobs jobs in $config_file"
+
+          for i in $(seq 0 $(($num_jobs - 1))); do
+              job_config=$(echo "$jobs_json" | jq ".[$i]")
+
+              export JOB_NAME=$(echo "$job_config" | jq -r '.name')
+              export MIN_REPLICAS=$(echo "$job_config" | jq -r '.config.min_replicas')
+              export MAX_REPLICAS=$(echo "$job_config" | jq -r '.config.max_replicas')
+              export ENTRY_POINT=$(echo "$job_config" | jq -r '.config.entry_point')
+              export NAMESPACE=$(echo "$job_config" | jq -r '.config.namespace')
+
+              echo "Processing job: $JOB_NAME"
+
+              envsubst < ray-job-template.yml > generated-manifests/job_${JOB_NAME}.yml
+
+              echo "Generated generated-manifests/job_${JOB_NAME}.yml"
+          done
+
+      - name: Package repository and manifests
+        id: package
+        run: |
+          # Define o nome do pacote zip
+          PACKAGE_NAME="${{ github.event.repository.name }}-${{ github.sha }}.zip"
+
+          zip -r $PACKAGE_NAME . -x ".git/*"
+          
+          echo "PACKAGE_NAME=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "Package created: $PACKAGE_NAME"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.set_vars.outputs.AWS_REGION }}
+
+      - name: Upload Package to S3
+        run: |
+          PACKAGE_NAME=${{ steps.package.outputs.PACKAGE_NAME }}
+          aws s3 cp $PACKAGE_NAME s3://${{ needs.set_vars.outputs.AWS_S3_BUCKET }}/raw_packages/$PACKAGE_NAME
+          echo "Successfully uploaded $PACKAGE_NAME to s3://${{ needs.set_vars.outputs.AWS_S3_BUCKET }}/raw_packages/"
+
+  call-cd:
+    if: github.ref == 'refs/heads/main'
+    needs: [build-and-upload-package]
+    uses: ./.github/workflows/cd.yml
+    with:
+      package_name: ${{ needs.build-and-upload-package.outputs.PACKAGE_NAME }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+  summary:
+    if: github.ref == 'refs/heads/main'
+    needs: [build, build-and-upload-package, call-cd]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display Summary
+        run: |
+          echo "## CI Summary"
+          echo ""
+          echo "- Linting and tests passed successfully."
+          echo "- Artifacts have been uploaded to S3 bucket: ${{ needs.build-and-upload-package.outputs.AWS_S3_BUCKET }}"
+          echo ""
+          echo "### AWS Details"
+          echo "${{ needs.build-and-upload-package.outputs  }}"
+          echo ""
