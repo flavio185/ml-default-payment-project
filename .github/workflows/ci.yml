@@ -26,7 +26,7 @@ jobs:
   
   set_vars:
     if: github.ref == 'refs/heads/main'
-    needs: build
+    needs: validate
     runs-on: ubuntu-latest
     outputs:
       AWS_REGION: ${{ steps.set_vars.outputs.AWS_REGION }}
@@ -41,7 +41,7 @@ jobs:
   
   build-and-upload-package:
     if: github.ref == 'refs/heads/main'
-    needs: [build, set_vars]
+    needs: [validate, set_vars]
     runs-on: ubuntu-latest
     outputs:
       PACKAGE_NAME: ${{ steps.package.outputs.PACKAGE_NAME }}
@@ -122,7 +122,7 @@ jobs:
 
   summary:
     if: github.ref == 'refs/heads/main'
-    needs: [build, build-and-upload-package, call-cd]
+    needs: [validate, build-and-upload-package, call-cd]
     runs-on: ubuntu-latest
     steps:
       - name: Display Summary
