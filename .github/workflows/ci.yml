@@ -57,7 +57,7 @@ jobs:
       - name: Generate all job files
         id: generate-files
         env:
-          AWS_S3_BUCKET: ${{ inputs.AWS_S3_BUCKET }}
+          AWS_S3_BUCKET: ${{ needs.set_vars.outputs.AWS_S3_BUCKET }}
           REPO_NAME: ${{ github.event.repository.name }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
@@ -75,7 +75,7 @@ jobs:
               export JOB_NAME=$(echo "$job_config" | jq -r '.name')
               export MIN_REPLICAS=$(echo "$job_config" | jq -r '.config.min_replicas')
               export MAX_REPLICAS=$(echo "$job_config" | jq -r '.config.max_replicas')
-              export ENTRY_POINT=$(echo "$job_config" | jq -r '.config.entry_point')
+              export ENTRYPOINT=$(echo "$job_config" | jq -r '.config.entrypoint')
               export NAMESPACE=$(echo "$job_config" | jq -r '.config.namespace')
 
               echo "Processing job: $JOB_NAME"
