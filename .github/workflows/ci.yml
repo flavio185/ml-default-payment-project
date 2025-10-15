@@ -75,13 +75,13 @@ jobs:
 
           for i in $(seq 0 $(($num_jobs - 1))); do
               job_config=$(echo "$jobs_json" | jq ".[$i]")
-
+              export SCHEDULE=""
               export JOB_NAME=$(echo "$job_config" | jq -r '.name')
               export MIN_REPLICAS=$(echo "$job_config" | jq -r '.config.min_replicas')
               export MAX_REPLICAS=$(echo "$job_config" | jq -r '.config.max_replicas')
               export ENTRYPOINT=$(echo "$job_config" | jq -r '.config.entrypoint')
               export NAMESPACE=$(echo "$job_config" | jq -r '.config.namespace')
-              export SCHEDULE=$(echo "$job_config" | jq -r '.config.cronjob // empty')
+              export SCHEDULE=$(echo "$job_config" | jq -r '.config.schedule')
               echo "Processing job: $JOB_NAME"
 
               envsubst < ray-job-template.yml > generated-manifests/job_${JOB_NAME}.yml
