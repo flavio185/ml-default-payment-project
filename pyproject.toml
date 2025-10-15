@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "ml_classification"
-version = "0.0.2"
+version = "0.0.4"
 description = "This is for testing ml classification algorithms"
 authors = [
   { name = "Flavio Venturini" },
