@@ -158,6 +158,7 @@ def run_pipeline():
     bronze()
     silver()
     gold()
+    train()
     console.print("[bold purple]>>> Pipeline completo executado com sucesso![/bold purple]")
 
 # --- Comandos do Projeto ---
