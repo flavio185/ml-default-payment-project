@@ -31,7 +31,7 @@ jobs:
     outputs:
       AWS_REGION: ${{ steps.set_vars.outputs.AWS_REGION }}
       AWS_S3_BUCKET: ${{ steps.set_vars.outputs.AWS_S3_BUCKET }}
-      PROJECT_VERSION_NAME: ${{ steps.set_vars.outputs.PROJECT_VERSION_NAME }}
+      PROJECT_VERSION: ${{ steps.set_vars.outputs.PROJECT_VERSION }}
     steps:
       - name: Checkout source code 
         uses: actions/checkout@v4
@@ -40,8 +40,31 @@ jobs:
         run: |
           echo "AWS_REGION=${{ vars.AWS_REGION }}" >> $GITHUB_OUTPUT
           echo "AWS_S3_BUCKET=${{ vars.AWS_S3_BUCKET }}" >> $GITHUB_OUTPUT
-          echo "PROJECT_VERSION_NAME=`sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml |  sed 's/\./-/g'`" >> $GITHUB_OUTPUT
+          echo "PROJECT_VERSION=`sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml |  sed 's/\./-/g'`" >> $GITHUB_OUTPUT
   
+  check-release-exist:
+    if: github.ref == 'refs/heads/main'
+    needs: [validate, set_vars]
+    runs-on: ubuntu-latest
+    outputs:
+      RELEASE_EXISTS: ${{ steps.check_release.outputs.RELEASE_EXISTS }}
+    steps:
+      - name: Checkout source code 
+        uses: actions/checkout@v4
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          PROJECT_VERSION=${{ needs.set_vars.outputs.PROJECT_VERSION }}
+          RELEASE_EXISTS=$(gh release view $PROJECT_VERSION > /dev/null 2>&1 && echo "true" || echo "false")
+          echo "RELEASE_EXISTS=$RELEASE_EXISTS" >> $GITHUB_OUTPUT
+          if [ "$RELEASE_EXISTS" == "true" ]; then
+            echo "Release $PROJECT_VERSION already exists. Exiting."
+            exit 1
+          else
+            echo "No existing release found for version $PROJECT_VERSION. Continuing."
+          fi
+
   build-and-upload-package:
     if: github.ref == 'refs/heads/main'
     needs: [validate, set_vars]
@@ -60,7 +83,7 @@ jobs:
       - name: Generate all job files
         env:
           REPO_NAME: ${{ github.event.repository.name }}
-          PROJECT_VERSION_NAME: ${{ needs.set_vars.outputs.PROJECT_VERSION_NAME }}
+          PROJECT_VERSION: ${{ needs.set_vars.outputs.PROJECT_VERSION }}
           AWS_S3_BUCKET: ${{ needs.set_vars.outputs.AWS_S3_BUCKET }}
         id: generate-files
         run: |
@@ -102,7 +125,7 @@ jobs:
         id: package
         run: |
           # Define o nome do pacote zip
-          PACKAGE_NAME="${{ github.event.repository.name }}-${{ needs.set_vars.outputs.PROJECT_VERSION_NAME }}.zip"
+          PACKAGE_NAME="${{ github.event.repository.name }}-${{ needs.set_vars.outputs.PROJECT_VERSION }}.zip"
 
           zip -r $PACKAGE_NAME . -x ".git/*"
           

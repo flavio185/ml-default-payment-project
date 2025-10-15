@@ -7,6 +7,10 @@ on:
         description: 'Package to deploy'
         required: true
         type: string
+      PROJECT_VERSION:
+        description: 'Release version'
+        required: false
+        type: string
     secrets:
       AWS_ACCESS_KEY_ID:
         description: 'AWS Access Key ID'
@@ -26,6 +30,7 @@ jobs:
       RESOURCE_GROUP: ${{ steps.set_vars.outputs.RESOURCE_GROUP }}
       AKS_CLUSTER_NAME: ${{ steps.set_vars.outputs.AKS_CLUSTER_NAME }}
       PACKAGE_NAME: ${{ steps.set_vars.outputs.PACKAGE_NAME }}
+      PROJECT_VERSION: ${{ steps.set_vars.outputs.PROJECT_VERSION }}
     steps:
       - name: Set VARS
         id: set_vars
@@ -35,6 +40,7 @@ jobs:
           echo "RESOURCE_GROUP=${{ vars.RESOURCE_GROUP }}" >> $GITHUB_OUTPUT
           echo "AKS_CLUSTER_NAME=${{ vars.AKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
           echo "PACKAGE_NAME=${{ inputs.package_name }}" >> $GITHUB_OUTPUT
+          echo "PROJECT_VERSION=${{ inputs.PROJECT_VERSION }}" >> $GITHUB_ENV
 
   deploy:
     needs: set_vars
@@ -54,23 +60,14 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.sha }}
-          release_name: Release ${{ github.sha }}
-          draft: false
-          prerelease: false
+      - name: Checkout source code 
+        uses: actions/checkout@v4
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      - name: Create and publish new GitHub Release
+        id: create_release
+        run: |
+          gh release create $PROJECT_VERSION --title "Release $PROJECT_VERSION" --notes "Automated release for version $PROJECT_VERSION" || echo "Release already exists"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ needs.set_vars.outputs.PACKAGE_NAME }}
-          asset_name: ${{ needs.set_vars.outputs.PACKAGE_NAME }}
-          asset_content_type: application/zip
+          PROJECT_VERSION: ${{ needs.set_vars.outputs.PROJECT_VERSION }}
+
