@@ -6,7 +6,8 @@
         "min_replicas": 1,
         "max_replicas": 5,
         "entrypoint": "uv run project-cli pipeline",
-        "namespace": "app-ns"
+        "namespace": "app-ns",
+        "schedule": "0 0 * * *"
       }
     }
   ]

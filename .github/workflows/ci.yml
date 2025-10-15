@@ -61,6 +61,7 @@ jobs:
         env:
           REPO_NAME: ${{ github.event.repository.name }}
           PROJECT_VERSION_NAME: ${{ needs.set_vars.outputs.PROJECT_VERSION_NAME }}
+          AWS_S3_BUCKET: ${{ needs.set_vars.outputs.AWS_S3_BUCKET }}
         id: generate-files
         run: |
           curl -o ray-job-template.yml https://raw.githubusercontent.com/flavio185/ml-project-scaffold/refs/heads/main/Ray/ray-job.yml
@@ -133,8 +134,8 @@ jobs:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
 
   summary:
-    if: github.ref == 'refs/heads/main'
     needs: [validate, build-and-upload-package, call-cd]
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Display Summary
