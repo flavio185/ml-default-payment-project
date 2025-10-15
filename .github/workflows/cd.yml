@@ -38,7 +38,7 @@ jobs:
 
   deploy:
     needs: set_vars
-    uses: flavio185/reusable-workflows/.github/workflows/deploy-to-k8s.yml@main
+    uses: flavio185/ml-project-scaffold/.github/workflows/deploy-to-k8s.yml@main
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -49,3 +49,28 @@ jobs:
       AWS_S3_BUCKET: ${{ needs.set_vars.outputs.AWS_S3_BUCKET }}
       RESOURCE_GROUP: ${{ needs.set_vars.outputs.RESOURCE_GROUP }}
       AKS_CLUSTER_NAME: ${{ needs.set_vars.outputs.AKS_CLUSTER_NAME }}
+
+  create-and-publish-release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.sha }}
+          release_name: Release ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ needs.set_vars.outputs.PACKAGE_NAME }}
+          asset_name: ${{ needs.set_vars.outputs.PACKAGE_NAME }}
+          asset_content_type: application/zip
