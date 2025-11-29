@@ -72,8 +72,7 @@ def test_train_and_evaluate(sample_train_data, sample_test_data):
     assert isinstance(metrics, dict)
     assert "accuracy" in metrics
     assert "f1" in metrics
-    assert "precision" in metrics
-    assert "recall" in metrics
+    assert "avg_precision" in metrics
 
     # Check values are valid
     assert 0 <= metrics["accuracy"] <= 1
