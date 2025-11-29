@@ -1,6 +1,8 @@
 import time
+
 import boto3
 from loguru import logger
+
 
 def wait_for_s3_object(bucket, key, timeout=10):
     s3 = boto3.client("s3")

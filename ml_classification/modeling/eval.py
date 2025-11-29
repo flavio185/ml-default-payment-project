@@ -67,6 +67,6 @@ def evaluate_model(model, X_test, y_test):
 
     # Log classification report
     logger.info("\nClassification Report:")
-    logger.info("\n" + classification_report(y_test, y_pred))
+    logger.info("\n %s", classification_report(y_test, y_pred))
 
     return metrics, cm, y_proba

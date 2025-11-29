@@ -1,6 +1,5 @@
-from pathlib import Path
-import pandas as pd
 from loguru import logger
+import pandas as pd
 import typer
 
 from data_processing.check_s3 import wait_for_s3_object
@@ -11,14 +10,12 @@ app = typer.Typer()
 
 @app.command()
 def main(
-    input_path: str = "s3://"+ S3_BUCKET +"/silver/credit_card_default.parquet",
-    output_path: str = "s3://"+ S3_BUCKET +"/gold/credit_card_default_features.parquet",
+    input_path: str = "s3://" + S3_BUCKET + "/silver/credit_card_default.parquet",
+    output_path: str = "s3://" + S3_BUCKET + "/gold/credit_card_default_features.parquet",
 ):
     logger.info("Loading Silver dataset...")
     wait_for_s3_object(S3_BUCKET, "silver/credit_card_default.parquet", timeout=60)
-    df = pd.read_parquet(
-        input_path, storage_options={"anon": False}
-    )
+    df = pd.read_parquet(input_path, storage_options={"anon": False})
 
     # convert all columns to lowercase
     df.columns = df.columns.str.lower()
@@ -35,8 +32,12 @@ def main(
     df["bill_trend"] = df["bill_amt6"] - df["bill_amt1"]
 
     # Pay ratio (total paid / total billed)
-    total_pay = df[["pay_amt1", "pay_amt2", "pay_amt3", "pay_amt4", "pay_amt5", "pay_amt6"]].sum(axis=1)
-    total_bill = df[["bill_amt1", "bill_amt2", "bill_amt3", "bill_amt4", "bill_amt5", "bill_amt6"]].sum(axis=1)
+    total_pay = df[["pay_amt1", "pay_amt2", "pay_amt3", "pay_amt4", "pay_amt5", "pay_amt6"]].sum(
+        axis=1
+    )
+    total_bill = df[
+        ["bill_amt1", "bill_amt2", "bill_amt3", "bill_amt4", "bill_amt5", "bill_amt6"]
+    ].sum(axis=1)
     df["pay_ratio"] = total_pay / (total_bill.replace(0, 1))  # avoid division by zero
 
     # Utilization (last bill / credit limit)
@@ -44,7 +45,7 @@ def main(
 
     # ------------------------------------------------------
     logger.info(f"Saving Gold dataset to {output_path}...")
-    df.to_parquet(output_path, index=False,  storage_options={"anon": False})
+    df.to_parquet(output_path, index=False, storage_options={"anon": False})
 
     logger.success("Gold dataset created successfully!")
 
