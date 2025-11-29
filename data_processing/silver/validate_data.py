@@ -1,11 +1,12 @@
-from pathlib import Path
-import pandas as pd
-import great_expectations as gx
-import typer
-from loguru import logger
-import sys
-import json
 from datetime import datetime
+import json
+from pathlib import Path
+import sys
+
+import great_expectations as gx
+from loguru import logger
+import pandas as pd
+import typer
 
 from data_processing.check_s3 import wait_for_s3_object
 from ml_classification.config import S3_BUCKET, VALIDATION_REPORTS_DIR
@@ -15,8 +16,9 @@ app = typer.Typer()
 
 @app.command()
 def main(
-    input_path: str = "s3://"+ S3_BUCKET +"/silver/credit_card_default.parquet",
-    log_output: Path = VALIDATION_REPORTS_DIR / f"validation_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+    input_path: str = "s3://" + S3_BUCKET + "/silver/credit_card_default.parquet",
+    log_output: Path = VALIDATION_REPORTS_DIR
+    / f"validation_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
 ):
     """
     Day 4 – Data Validation
@@ -24,14 +26,11 @@ def main(
     """
     logger.info(f"Loading Silver dataset from: {input_path}")
     wait_for_s3_object(S3_BUCKET, "silver/credit_card_default.parquet", timeout=60)
-    
-    df = pd.read_parquet(
-        input_path, storage_options={"anon": False}
-    )
+
+    df = pd.read_parquet(input_path, storage_options={"anon": False})
     if df.empty:
         logger.error("Input DataFrame is empty. Exiting validation.")
         sys.exit(1)
-
 
     data_source_name = "credit_card_default"
     data_asset_name = "credit_card_default_asset"
@@ -57,41 +56,34 @@ def main(
     suite = gx.ExpectationSuite(name=expectation_suite_name)
     # Add Expectations
     suite.add_expectation(
-        gx.expectations.ExpectColumnValuesToNotBeNull(
-            column="default_payment_next_month"
-        )
+        gx.expectations.ExpectColumnValuesToNotBeNull(column="default_payment_next_month")
     )
 
     suite.add_expectation(
-        gx.expectations.ExpectColumnValuesToBeBetween(
-            column="age", min_value=18, max_value=100)
+        gx.expectations.ExpectColumnValuesToBeBetween(column="age", min_value=18, max_value=100)
     )
     suite.add_expectation(
-        gx.expectations.ExpectColumnValuesToBeBetween(
-            column="limit_bal", min_value=1)
+        gx.expectations.ExpectColumnValuesToBeBetween(column="limit_bal", min_value=1)
     )
     suite.add_expectation(
-        gx.expectations.ExpectColumnValuesToBeInSet(
-            column="sex", value_set=[1, 2])
+        gx.expectations.ExpectColumnValuesToBeInSet(column="sex", value_set=[1, 2])
     )
     suite.add_expectation(
-        gx.expectations.ExpectColumnValuesToBeInSet(
-            column="education", value_set=[1, 2, 3, 4])
+        gx.expectations.ExpectColumnValuesToBeInSet(column="education", value_set=[1, 2, 3, 4])
     )
     suite.add_expectation(
-        gx.expectations.ExpectColumnValuesToBeInSet(
-            column="marriage", value_set=[1, 2, 3])
+        gx.expectations.ExpectColumnValuesToBeInSet(column="marriage", value_set=[1, 2, 3])
     )
 
     # Add the Expectation Suite to the Context
     context.suites.add_or_update(suite)
 
     # --- Validation Rules ---
-    
+
     logger.info("Running Great Expectations checks...")
 
     # Validate the Data Against the Suite
-    validation_results = batch.validate(suite)    
+    validation_results = batch.validate(suite)
     json_result = validation_results.to_json_dict()
     logger.info(validation_results.statistics)
     logger.info("Great Expectations checks complete.")
@@ -107,6 +99,7 @@ def main(
     if not validation_results.success:
         logger.error("❌ Data validation failed!")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     app()

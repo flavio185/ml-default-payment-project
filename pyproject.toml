@@ -30,6 +30,7 @@ dependencies = [
     "great-expectations>=1.5.8",
     "pytest-cov>=6.2.1",
     "s3fs>=2025.7.0",
+    "pre-commit>=4.4.0",
 ]
 requires-python = "~=3.12.0"
 

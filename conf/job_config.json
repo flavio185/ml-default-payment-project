@@ -5,7 +5,7 @@
       "config": {
         "min_replicas": 1,
         "max_replicas": 5,
-        "entrypoint": "uv run project-cli pipeline",
+        "entrypoint": "uv run project-cli full_pipeline",
         "namespace": "app-ns",
         "schedule": "0 0 * * *"
       }
