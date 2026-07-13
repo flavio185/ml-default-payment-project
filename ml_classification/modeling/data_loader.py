@@ -75,3 +75,68 @@ def load_features(
     logger.info(f"Train set: {len(X_train)} rows, Test set: {len(X_test)} rows")
 
     return X_train, X_test, y_train, y_test, feature_metadata
+
+
+def load_features_from_feast(
+    target_col: str = "default_payment_next_month",
+    test_size: float = 0.2,
+    random_state: int = 42,
+):
+    """Load features from Feast historical store instead of direct S3 parquet.
+
+    Uses Feast get_historical_features() for point-in-time correct joins.
+    Falls back to direct parquet loading if Feast is unavailable.
+
+    Returns:
+        Tuple of (X_train, X_test, y_train, y_test, metadata)
+    """
+    try:
+        from ml_classification.config import S3_BUCKET
+        from ml_classification.features.feast_utils import get_training_features
+
+        # Carrega Gold parquet para obter entity_df (customer_id + event_timestamp)
+        features_path = f"s3://{S3_BUCKET}/gold/credit_card_default_features.parquet"
+        df = pd.read_parquet(features_path, storage_options={"anon": False})
+
+        entity_df = df[["customer_id", "ingestion_time"]].rename(
+            columns={"ingestion_time": "event_timestamp"}
+        )
+
+        # Recupera features do Feast (point-in-time join)
+        training_df = get_training_features(entity_df)
+
+        # Adiciona target column do parquet original
+        training_df[target_col] = df[target_col].values
+
+        X = training_df.drop(
+            columns=[target_col, "customer_id", "event_timestamp", "ingestion_time"],
+            errors="ignore",
+        )
+        y = training_df[target_col]
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=random_state, stratify=y
+        )
+
+        metadata = {
+            "source": "feast",
+            "feature_view": "credit_card_features",
+            "split_strategy": {
+                "method": "train_test_split",
+                "random_state": random_state,
+                "train_size": len(X_train),
+                "test_size": len(X_test),
+            },
+        }
+
+        logger.info(f"Feast: Train set: {len(X_train)} rows, Test set: {len(X_test)} rows")
+        return X_train, X_test, y_train, y_test, metadata
+
+    except Exception as e:
+        logger.warning(f"Feast unavailable ({e}), falling back to direct parquet loading")
+        return load_features(
+            "s3://datamasters2025/gold/credit_card_default_features.parquet",
+            target_col,
+            test_size,
+            random_state,
+        )

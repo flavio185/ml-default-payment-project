@@ -1,0 +1,43 @@
+# Namespace + ResourceQuota + RBAC for ml-credit-default project.
+# Argo CD applies this to create the project's isolated namespace.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ml-credit-default
+  labels:
+    istio-injection: enabled
+    app.kubernetes.io/part-of: ml-platform
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: project-quota
+  namespace: ml-credit-default
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: "32Gi"
+    limits.cpu: "16"
+    limits.memory: "64Gi"
+    pods: "50"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-workflow-sa
+  namespace: ml-credit-default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argo-workflow-binding
+  namespace: ml-credit-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argo-workflow-executor
+subjects:
+  - kind: ServiceAccount
+    name: argo-workflow-sa
+    namespace: ml-credit-default

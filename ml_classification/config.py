@@ -28,3 +28,6 @@ REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
 AWS_SHARED_CREDENTIALS_FILE = PROJ_ROOT / ".aws/credentials"
+
+# Feast
+FEAST_REPO_PATH = PROJ_ROOT / "feast"

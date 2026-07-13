@@ -13,7 +13,7 @@ from loguru import logger
 import pandas as pd
 import typer
 
-from ml_classification.config import S3_BUCKET
+from ml_classification.config import FEAST_REPO_PATH, S3_BUCKET
 from ml_classification.features.engineering import engineer_features, get_feature_names
 from ml_classification.features.preprocessing import (
     get_preprocessing_config,
@@ -21,6 +21,24 @@ from ml_classification.features.preprocessing import (
 )
 
 app = typer.Typer()
+
+
+def _feast_materialize():
+    """Registra feature definitions e materializa features para o online store."""
+    try:
+        from feast import FeatureStore
+        from feast.features.credit_card_features import (
+            credit_card_features,
+            customer,
+            gold_source,
+        )
+
+        store = FeatureStore(repo_path=str(FEAST_REPO_PATH))
+        store.apply([customer, credit_card_features, gold_source])
+        store.materialize_incremental(end_date=datetime.now(timezone.utc))
+        logger.success("Feast: features registradas e materializadas com sucesso")
+    except Exception as e:
+        logger.warning(f"Feast materialization skipped: {e}")
 
 
 def get_dataset_metadata(data_path: str) -> dict:
@@ -139,6 +157,9 @@ def run_feature_pipeline(
     # Also save preprocessing config separately for easy access
     preprocessing_config_path = output_path.replace(".parquet", "_preprocessing_config.json")
     save_preprocessing_config(preprocessing_config, preprocessing_config_path)
+
+    # Register and materialize features to Feast online store
+    _feast_materialize()
 
     logger.info("=" * 60)
     logger.success("FEATURE PIPELINE COMPLETED")

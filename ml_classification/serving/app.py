@@ -11,7 +11,7 @@ app = FastAPI(title="Online MLflow Inference API")
 
 
 # -----------------------------
-# Input data schema
+# Input data schemas
 # -----------------------------
 class FeatureRow(BaseModel):
     features: Dict[str, Any]
@@ -19,6 +19,10 @@ class FeatureRow(BaseModel):
 
 class FeatureBatch(BaseModel):
     data: List[FeatureRow]
+
+
+class FeastPredictRequest(BaseModel):
+    customer_ids: List[int]
 
 
 # -----------------------------
@@ -32,7 +36,7 @@ EXPECTED_COLS = [c.name for c in signature.inputs]
 
 
 # -----------------------------
-# Online inference endpoint
+# Online inference endpoint (backward compatible — features in request)
 # -----------------------------
 @app.post("/predict")
 def predict(batch: FeatureBatch):
@@ -66,7 +70,58 @@ def predict(batch: FeatureBatch):
 
 
 # -----------------------------
-# Optional health check
+# Feast-based inference endpoint — features looked up from online store
+# -----------------------------
+@app.post("/predict/feast")
+def predict_feast(request: FeastPredictRequest):
+    if not request.customer_ids:
+        raise HTTPException(status_code=400, detail="Empty customer_ids list")
+
+    try:
+        from ml_classification.features.feast_utils import get_online_features
+    except ImportError:
+        raise HTTPException(status_code=501, detail="Feast not available")
+
+    # Recupera features do online store
+    entity_rows = [{"customer_id": cid} for cid in request.customer_ids]
+    X = get_online_features(entity_rows)
+
+    # Remove entity key column
+    X = X.drop(columns=["customer_id"], errors="ignore")
+
+    # Ensure categorical columns are strings
+    for col in X.select_dtypes(include=["object", "category"]):
+        X[col] = X[col].astype(str)
+
+    # Align columns to model signature
+    missing_cols = set(EXPECTED_COLS) - set(X.columns)
+    if missing_cols:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing expected columns from Feast: {missing_cols}",
+        )
+    X = X[EXPECTED_COLS]
+
+    # Run predictions
+    y_proba = pipeline.predict_proba(X)[:, 1]
+    y_pred = (y_proba >= 0.5).astype(int)
+
+    results = []
+    for i, cid in enumerate(request.customer_ids):
+        results.append(
+            {
+                "customer_id": cid,
+                "prediction": int(y_pred[i]),
+                "probability": float(y_proba[i]),
+                "inference_timestamp": datetime.utcnow().isoformat(),
+            }
+        )
+
+    return results
+
+
+# -----------------------------
+# Health check
 # -----------------------------
 @app.get("/health")
 def health_check():

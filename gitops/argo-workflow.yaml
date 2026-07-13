@@ -1,0 +1,83 @@
+# Full ML pipeline as an Argo Workflow DAG.
+# Each step references shared ClusterWorkflowTemplates (container-step, rayjob-step).
+# All steps use container-step now; switch training to rayjob-step when datasets grow.
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: full-ml-pipeline
+  namespace: ml-credit-default
+spec:
+  entrypoint: pipeline-dag
+  serviceAccountName: argo-workflow-sa
+  arguments:
+    parameters:
+      - name: image
+        value: "ghcr.io/datamaster2026/ml-default-payment-project:latest"
+  templates:
+    - name: pipeline-dag
+      dag:
+        tasks:
+          - name: bronze
+            templateRef:
+              name: container-step
+              clusterScope: true
+              template: run
+            arguments:
+              parameters:
+                - name: image
+                  value: "{{workflow.parameters.image}}"
+                - name: cmd
+                  value: "python data_processing/bronze/ingest_bronze.py"
+
+          - name: silver
+            dependencies: [bronze]
+            templateRef:
+              name: container-step
+              clusterScope: true
+              template: run
+            arguments:
+              parameters:
+                - name: image
+                  value: "{{workflow.parameters.image}}"
+                - name: cmd
+                  value: "python data_processing/silver/clean_data.py"
+
+          - name: validate
+            dependencies: [silver]
+            templateRef:
+              name: container-step
+              clusterScope: true
+              template: run
+            arguments:
+              parameters:
+                - name: image
+                  value: "{{workflow.parameters.image}}"
+                - name: cmd
+                  value: "python data_processing/silver/validate_data.py"
+
+          - name: features
+            dependencies: [validate]
+            templateRef:
+              name: container-step
+              clusterScope: true
+              template: run
+            arguments:
+              parameters:
+                - name: image
+                  value: "{{workflow.parameters.image}}"
+                - name: cmd
+                  value: "python ml_classification/pipelines/feature_pipeline.py"
+
+          - name: training
+            dependencies: [features]
+            # Scale-up: change templateRef to rayjob-step for distributed training
+            templateRef:
+              name: container-step
+              clusterScope: true
+              template: run
+            arguments:
+              parameters:
+                - name: image
+                  value: "{{workflow.parameters.image}}"
+                - name: cmd
+                  value: "python ml_classification/pipelines/training_pipeline_v2.py"

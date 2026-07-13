@@ -1,0 +1,13 @@
+project: credit_card_default
+provider: local
+registry:
+  registry_type: sql
+  path: postgresql+psycopg2://feast:feast@feast-postgresql.feast-ns.svc.cluster.local:5432/feast_registry
+offline_store:
+  # Reads S3 parquet via PyArrow. Sufficient for current dataset (~30K rows).
+  # Scale-up: change to type: spark (distributed via Ray) for billions of rows.
+  type: file
+online_store:
+  type: redis
+  connection_string: redis-master.feast-ns.svc.cluster.local:6379
+entity_key_serialization_version: 3

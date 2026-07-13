@@ -113,4 +113,4 @@ endef
 export PRINT_HELP_PYSCRIPT
 
 help:
-	@uv run-c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)
+	@uv run python -c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)

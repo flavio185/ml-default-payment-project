@@ -37,6 +37,10 @@ def main(
     float_cols = [c for c in df.columns if "bill_amt" in c or "pay_amt" in c or c == "limit_bal"]
     df[float_cols] = df[float_cols].astype("float")
 
+    # --- Add entity key for Feast ---
+    logger.info("Adding customer_id surrogate key...")
+    df["customer_id"] = range(len(df))
+
     # --- Save Silver ---
     logger.info(f"Saving Silver dataset to: {output_path}")
     df.to_parquet(output_path, index=False, storage_options={"anon": False})

@@ -1,0 +1,27 @@
+# KServe InferenceService for serverless model serving.
+# Uses the MLflow model from the MinIO artifact store.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: default-payment-predictor
+  namespace: ml-credit-default
+spec:
+  predictor:
+    minReplicas: 0
+    maxReplicas: 5
+    scaleTarget: 10
+    scaleMetric: concurrency
+    model:
+      modelFormat:
+        name: sklearn
+      storageUri: "s3://mlflow-bucket/1/artifacts/model"
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "1"
+          memory: "512Mi"
+    logger:
+      mode: all
+      url: http://kafka-broker-ingress.knative-eventing.svc.cluster.local/knative-serving/default

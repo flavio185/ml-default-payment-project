@@ -1,0 +1,232 @@
+{
+    "success": true,
+    "results": [
+        {
+            "success": true,
+            "expectation_config": {
+                "type": "expect_column_values_to_not_be_null",
+                "kwargs": {
+                    "batch_id": "credit_card_default-credit_card_default_asset",
+                    "column": "default_payment_next_month"
+                },
+                "meta": {},
+                "id": "adade1ba-c07d-4936-ab09-fe36ec671f5f",
+                "severity": "critical"
+            },
+            "result": {
+                "element_count": 30000,
+                "unexpected_count": 0,
+                "unexpected_percent": 0.0,
+                "partial_unexpected_list": [],
+                "partial_unexpected_counts": [],
+                "partial_unexpected_index_list": []
+            },
+            "meta": {},
+            "exception_info": {
+                "raised_exception": false,
+                "exception_traceback": null,
+                "exception_message": null
+            }
+        },
+        {
+            "success": true,
+            "expectation_config": {
+                "type": "expect_column_values_to_be_between",
+                "kwargs": {
+                    "batch_id": "credit_card_default-credit_card_default_asset",
+                    "column": "age",
+                    "min_value": 18.0,
+                    "max_value": 100.0
+                },
+                "meta": {},
+                "id": "fa57ec35-6731-4dca-a857-8bac676552d9",
+                "severity": "critical"
+            },
+            "result": {
+                "element_count": 30000,
+                "unexpected_count": 0,
+                "unexpected_percent": 0.0,
+                "partial_unexpected_list": [],
+                "missing_count": 0,
+                "missing_percent": 0.0,
+                "unexpected_percent_total": 0.0,
+                "unexpected_percent_nonmissing": 0.0,
+                "partial_unexpected_counts": [],
+                "partial_unexpected_index_list": []
+            },
+            "meta": {},
+            "exception_info": {
+                "raised_exception": false,
+                "exception_traceback": null,
+                "exception_message": null
+            }
+        },
+        {
+            "success": true,
+            "expectation_config": {
+                "type": "expect_column_values_to_be_between",
+                "kwargs": {
+                    "batch_id": "credit_card_default-credit_card_default_asset",
+                    "column": "limit_bal",
+                    "min_value": 1.0
+                },
+                "meta": {},
+                "id": "c357f37d-23be-4427-af70-05323e6b7e6b",
+                "severity": "critical"
+            },
+            "result": {
+                "element_count": 30000,
+                "unexpected_count": 0,
+                "unexpected_percent": 0.0,
+                "partial_unexpected_list": [],
+                "missing_count": 0,
+                "missing_percent": 0.0,
+                "unexpected_percent_total": 0.0,
+                "unexpected_percent_nonmissing": 0.0,
+                "partial_unexpected_counts": [],
+                "partial_unexpected_index_list": []
+            },
+            "meta": {},
+            "exception_info": {
+                "raised_exception": false,
+                "exception_traceback": null,
+                "exception_message": null
+            }
+        },
+        {
+            "success": true,
+            "expectation_config": {
+                "type": "expect_column_values_to_be_in_set",
+                "kwargs": {
+                    "batch_id": "credit_card_default-credit_card_default_asset",
+                    "column": "sex",
+                    "value_set": [
+                        1,
+                        2
+                    ]
+                },
+                "meta": {},
+                "id": "8a413674-2241-48a7-aaee-2d49258a58e4",
+                "severity": "critical"
+            },
+            "result": {
+                "element_count": 30000,
+                "unexpected_count": 0,
+                "unexpected_percent": 0.0,
+                "partial_unexpected_list": [],
+                "missing_count": 0,
+                "missing_percent": 0.0,
+                "unexpected_percent_total": 0.0,
+                "unexpected_percent_nonmissing": 0.0,
+                "partial_unexpected_counts": [],
+                "partial_unexpected_index_list": []
+            },
+            "meta": {},
+            "exception_info": {
+                "raised_exception": false,
+                "exception_traceback": null,
+                "exception_message": null
+            }
+        },
+        {
+            "success": true,
+            "expectation_config": {
+                "type": "expect_column_values_to_be_in_set",
+                "kwargs": {
+                    "batch_id": "credit_card_default-credit_card_default_asset",
+                    "column": "education",
+                    "value_set": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                },
+                "meta": {},
+                "id": "940a1256-e7c1-46ac-ae88-32271bb02e38",
+                "severity": "critical"
+            },
+            "result": {
+                "element_count": 30000,
+                "unexpected_count": 0,
+                "unexpected_percent": 0.0,
+                "partial_unexpected_list": [],
+                "missing_count": 0,
+                "missing_percent": 0.0,
+                "unexpected_percent_total": 0.0,
+                "unexpected_percent_nonmissing": 0.0,
+                "partial_unexpected_counts": [],
+                "partial_unexpected_index_list": []
+            },
+            "meta": {},
+            "exception_info": {
+                "raised_exception": false,
+                "exception_traceback": null,
+                "exception_message": null
+            }
+        },
+        {
+            "success": true,
+            "expectation_config": {
+                "type": "expect_column_values_to_be_in_set",
+                "kwargs": {
+                    "batch_id": "credit_card_default-credit_card_default_asset",
+                    "column": "marriage",
+                    "value_set": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "meta": {},
+                "id": "9742228f-b90b-4750-8a92-95a55bcb4aaf",
+                "severity": "critical"
+            },
+            "result": {
+                "element_count": 30000,
+                "unexpected_count": 0,
+                "unexpected_percent": 0.0,
+                "partial_unexpected_list": [],
+                "missing_count": 0,
+                "missing_percent": 0.0,
+                "unexpected_percent_total": 0.0,
+                "unexpected_percent_nonmissing": 0.0,
+                "partial_unexpected_counts": [],
+                "partial_unexpected_index_list": []
+            },
+            "meta": {},
+            "exception_info": {
+                "raised_exception": false,
+                "exception_traceback": null,
+                "exception_message": null
+            }
+        }
+    ],
+    "suite_name": "credit_card_default_suite",
+    "suite_parameters": {},
+    "statistics": {
+        "evaluated_expectations": 6,
+        "successful_expectations": 6,
+        "unsuccessful_expectations": 0,
+        "success_percent": 100.0
+    },
+    "meta": {
+        "great_expectations_version": "1.15.2",
+        "batch_spec": {
+            "batch_data": "PandasDataFrame"
+        },
+        "batch_markers": {
+            "ge_load_time": "20260713T231652.803135Z",
+            "pandas_data_fingerprint": "1eb57c8a4fc2599f9b2b1e7578ae914c"
+        },
+        "active_batch_definition": {
+            "datasource_name": "credit_card_default",
+            "data_connector_name": "fluent",
+            "data_asset_name": "credit_card_default_asset",
+            "batch_identifiers": {
+                "dataframe": "<DATAFRAME>"
+            }
+        }
+    },
+    "id": null
+}

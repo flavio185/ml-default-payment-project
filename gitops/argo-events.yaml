@@ -1,0 +1,64 @@
+# Argo Events for drift-triggered model retraining.
+# Extracted from the TODO in ml-platform/Inference/KNative/trigger.yaml:42-109.
+#
+# Flow: drift-detector service detects covariate drift
+#       -> POSTs to EventSource webhook
+#       -> Sensor triggers retraining workflow
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: drift-detected-source
+  namespace: ml-credit-default
+spec:
+  webhook:
+    drift-detected:
+      port: "12000"
+      endpoint: /drift-detected
+      method: POST
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drift-detected-source-eventsource-svc
+  namespace: ml-credit-default
+spec:
+  selector:
+    eventsource-name: drift-detected-source
+  ports:
+    - port: 12000
+      targetPort: 12000
+  type: ClusterIP
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: retraining-sensor
+  namespace: ml-credit-default
+spec:
+  dependencies:
+    - name: drift-event
+      eventSourceName: drift-detected-source
+      eventName: drift-detected
+  triggers:
+    - template:
+        name: retraining-trigger
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: retraining-
+                namespace: ml-credit-default
+              spec:
+                workflowTemplateRef:
+                  name: full-ml-pipeline
+                arguments:
+                  parameters:
+                    - name: image
+                      value: "ghcr.io/datamaster2026/ml-default-payment-project:latest"
