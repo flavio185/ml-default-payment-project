@@ -22,6 +22,24 @@ spec:
     limits.memory: "64Gi"
     pods: "50"
 ---
+# ResourceQuota requires every container to specify requests/limits.
+# Argo Workflows auto-injects init/wait sidecar containers with no resources set,
+# so a LimitRange fills in defaults for them (and any other container that omits resources).
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-container-resources
+  namespace: ml-credit-default
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:

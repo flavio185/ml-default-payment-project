@@ -18,4 +18,4 @@ spec:
     arguments:
       parameters:
         - name: image
-          value: "ghcr.io/datamaster2026/ml-default-payment-project:latest"
+          value: "ml-project:1.0"
