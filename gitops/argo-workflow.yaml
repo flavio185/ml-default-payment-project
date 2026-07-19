@@ -27,7 +27,7 @@ spec:
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
-                  value: "python data_processing/bronze/ingest_bronze.py"
+                  value: "uv run python data_processing/bronze/ingest_bronze.py"
 
           - name: silver
             dependencies: [bronze]
@@ -40,7 +40,7 @@ spec:
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
-                  value: "python data_processing/silver/clean_data.py"
+                  value: "uv run python data_processing/silver/clean_data.py"
 
           - name: validate
             dependencies: [silver]
@@ -53,7 +53,7 @@ spec:
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
-                  value: "python data_processing/silver/validate_data.py"
+                  value: "uv run python data_processing/silver/validate_data.py"
 
           - name: features
             dependencies: [validate]
@@ -66,7 +66,7 @@ spec:
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
-                  value: "python ml_classification/pipelines/feature_pipeline.py"
+                  value: "uv run python ml_classification/pipelines/feature_pipeline.py"
 
           - name: training
             dependencies: [features]
@@ -80,4 +80,4 @@ spec:
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
-                  value: "python ml_classification/pipelines/training_pipeline_v2.py"
+                  value: "uv run python ml_classification/pipelines/training_pipeline_v2.py"
