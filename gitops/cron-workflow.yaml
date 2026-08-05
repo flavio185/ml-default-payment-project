@@ -6,7 +6,7 @@ metadata:
   name: daily-ml-pipeline
   namespace: ml-credit-default
 spec:
-  schedule: 
+  schedules:
     - "0 2 * * *"
   timezone: "UTC"
   concurrencyPolicy: Forbid

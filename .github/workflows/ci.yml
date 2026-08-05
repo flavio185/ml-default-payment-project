@@ -135,9 +135,11 @@ jobs:
     steps:
       - name: Display Summary
         run: |
-          echo "## CI Summary"
-          echo ""
-          echo "- Linting and tests passed successfully."
-          echo "- Docker image pushed to Docker Hub"
-          echo "- GitOps repo updated — Argo CD will auto-sync"
-          echo "- Release: ${{ needs.set_vars.outputs.PROJECT_VERSION }}"
+          {
+            echo "## CI Summary"
+            echo ""
+            echo "- Linting and tests passed successfully."
+            echo "- Docker image pushed to Docker Hub"
+            echo "- GitOps repo updated — Argo CD will auto-sync"
+            echo "- Release: ${{ needs.set_vars.outputs.PROJECT_VERSION }}"
+          } >> "$GITHUB_STEP_SUMMARY"
