@@ -12,7 +12,7 @@ spec:
   arguments:
     parameters:
       - name: image
-        value: "ml-project:1.0"
+        value: "docker.io/flavio185/ml-default-payment-project:latest"
   templates:
     - name: pipeline-dag
       dag:
