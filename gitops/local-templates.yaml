@@ -24,14 +24,6 @@ spec:
         parameters:
           - name: image
           - name: cmd
-          - name: cpu-request
-            default: "200m"
-          - name: memory-request
-            default: "512Mi"
-          - name: cpu-limit
-            default: "1"
-          - name: memory-limit
-            default: "2Gi"
       retryStrategy:
         limit: "2"
         retryPolicy: OnFailure
@@ -52,8 +44,8 @@ spec:
             value: "true"
         resources:
           requests:
-            cpu: "{{inputs.parameters.cpu-request}}"
-            memory: "{{inputs.parameters.memory-request}}"
+            cpu: "200m"
+            memory: "512Mi"
           limits:
-            cpu: "{{inputs.parameters.cpu-limit}}"
-            memory: "{{inputs.parameters.memory-limit}}"
+            cpu: "1"
+            memory: "2Gi"
