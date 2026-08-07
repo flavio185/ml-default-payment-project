@@ -1,7 +1,6 @@
 # KServe InferenceService for serverless model serving.
-# Uses the MLflow model from the MinIO artifact store (kubernetes-mlflow,
-# bucket mlflow-artifacts — NOT the old mlflow-bucket, which belonged to the
-# now-retired DataMaster2026 MLflow instance).
+# Uses the MLflow model from kubernetes-mlflow's MinIO artifact store
+# (bucket mlflow-artifacts).
 apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
@@ -17,13 +16,14 @@ spec:
     model:
       modelFormat:
         name: sklearn
-      # TEMPORARY placeholder: points at a known-good sklearn model artifact
-      # (from kubernetes-mlflow's own test notebook) purely to validate the
-      # credential/endpoint wiring above. This is NOT a credit-default model
-      # — swap for the real one once training_pipeline_v2 successfully logs
-      # a run to kubernetes-mlflow (currently blocked on the AWS-vs-MinIO
-      # credential conflict in ml_classification/modeling/data_loader.py).
-      storageUri: "s3://mlflow-artifacts/mlflow/1/models/m-86622c3ae37b461e97846465b10f8c33/artifacts"
+      # default-payment-randomforestclassifier v1 (run
+      # a25c4a6715cc4d4193e815d6a09e6e8d, experiment "baseline-models"),
+      # picked over the logistic regression run on every metric (accuracy
+      # 0.810 vs 0.809, ROC AUC 0.770 vs 0.709, F1 0.399 vs 0.363). No
+      # champion-alias/model-selection logic exists yet in
+      # training_pipeline_v2 — this was picked and pinned manually. Update
+      # this storageUri by hand after each retrain until that's automated.
+      storageUri: "s3://mlflow-artifacts/mlflow/1/models/m-9b48b25ce07c4226afc93cf6e7db0878/artifacts"
       resources:
         requests:
           cpu: "100m"
