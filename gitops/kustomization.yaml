@@ -3,7 +3,9 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - local-templates.yaml
   - argo-workflow.yaml
   - cron-workflow.yaml
   - argo-events.yaml
+  - kserve-minio-credentials.yaml
   - kserve-inference.yaml

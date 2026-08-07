@@ -70,10 +70,12 @@ spec:
 
           - name: training
             dependencies: [features]
+            # Project-local override (see local-templates.yaml) — same as
+            # container-step but points MLFLOW_TRACKING_URI at
+            # kubernetes-mlflow instead of the shared/retired default.
             # Scale-up: change templateRef to rayjob-step for distributed training
             templateRef:
-              name: container-step
-              clusterScope: true
+              name: container-step-project
               template: run
             arguments:
               parameters:

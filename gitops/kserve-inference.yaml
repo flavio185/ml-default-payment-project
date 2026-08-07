@@ -1,5 +1,7 @@
 # KServe InferenceService for serverless model serving.
-# Uses the MLflow model from the MinIO artifact store.
+# Uses the MLflow model from the MinIO artifact store (kubernetes-mlflow,
+# bucket mlflow-artifacts — NOT the old mlflow-bucket, which belonged to the
+# now-retired DataMaster2026 MLflow instance).
 apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
@@ -7,6 +9,7 @@ metadata:
   namespace: ml-credit-default
 spec:
   predictor:
+    serviceAccountName: kserve-minio-sa
     minReplicas: 0
     maxReplicas: 5
     scaleTarget: 10
@@ -14,7 +17,13 @@ spec:
     model:
       modelFormat:
         name: sklearn
-      storageUri: "s3://mlflow-bucket/1/artifacts/model"
+      # TEMPORARY placeholder: points at a known-good sklearn model artifact
+      # (from kubernetes-mlflow's own test notebook) purely to validate the
+      # credential/endpoint wiring above. This is NOT a credit-default model
+      # — swap for the real one once training_pipeline_v2 successfully logs
+      # a run to kubernetes-mlflow (currently blocked on the AWS-vs-MinIO
+      # credential conflict in ml_classification/modeling/data_loader.py).
+      storageUri: "s3://mlflow-artifacts/mlflow/1/models/m-86622c3ae37b461e97846465b10f8c33/artifacts"
       resources:
         requests:
           cpu: "100m"

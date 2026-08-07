@@ -1,0 +1,59 @@
+# Project-scoped override of the shared `container-step` ClusterWorkflowTemplate
+# (ml-platform/ArgoWorkflows/cluster-workflow-templates.yaml), used only by the
+# `training` task in argo-workflow.yaml. The shared template hardcodes
+# MLFLOW_TRACKING_URI to the old (retired) DataMaster2026 MLflow instance
+# (nginx.mlflow-ns.svc.cluster.local); this repoints just this project's
+# training step at kubernetes-mlflow instead, without touching the shared
+# template used by other projects.
+#
+# AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY come from the aws-credentials Secret
+# (envFrom, unchanged) and are the *real* AWS keys used to read
+# s3://datamasters2025/gold/... — they are NOT valid for the MinIO endpoint
+# below, so mlflow.sklearn.log_model()'s upload to MinIO will fail
+# authentication until that credential split is fixed in
+# ml_classification/modeling/data_loader.py (tracked separately).
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: container-step-project
+  namespace: ml-credit-default
+spec:
+  templates:
+    - name: run
+      inputs:
+        parameters:
+          - name: image
+          - name: cmd
+          - name: cpu-request
+            default: "200m"
+          - name: memory-request
+            default: "512Mi"
+          - name: cpu-limit
+            default: "1"
+          - name: memory-limit
+            default: "2Gi"
+      retryStrategy:
+        limit: "2"
+        retryPolicy: OnFailure
+      timeout: "30m"
+      container:
+        image: "{{inputs.parameters.image}}"
+        command: ["sh", "-c"]
+        args: ["{{inputs.parameters.cmd}}"]
+        envFrom:
+          - secretRef:
+              name: aws-credentials
+        env:
+          - name: MLFLOW_TRACKING_URI
+            value: "http://mlflow-mlflow.mlflow.svc.cluster.local:5000"
+          - name: MLFLOW_S3_ENDPOINT_URL
+            value: "http://minio.mlflow.svc.cluster.local:9000"
+          - name: MLFLOW_S3_IGNORE_TLS
+            value: "true"
+        resources:
+          requests:
+            cpu: "{{inputs.parameters.cpu-request}}"
+            memory: "{{inputs.parameters.memory-request}}"
+          limits:
+            cpu: "{{inputs.parameters.cpu-limit}}"
+            memory: "{{inputs.parameters.memory-limit}}"
