@@ -4,11 +4,47 @@ This module handles loading features and metadata from the Gold layer.
 """
 
 import json
+import os
 
 import boto3
 from loguru import logger
 import pandas as pd
 from sklearn.model_selection import train_test_split
+
+
+def _data_aws_credentials() -> dict:
+    """Explicit AWS credentials for reading the data lake (real S3).
+
+    Kept separate from AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, which
+    mlflow's own S3 client uses to write artifacts to MinIO in the same
+    process during training — those are different credentials for a
+    different (S3-compatible but not real-AWS) endpoint. Falls back to
+    AWS_ACCESS_KEY_ID/SECRET (or boto3's default credential chain) when
+    DATA_AWS_* isn't set, e.g. for local development or steps that don't
+    also talk to MinIO.
+    """
+    key = os.environ.get("DATA_AWS_ACCESS_KEY_ID") or os.environ.get("AWS_ACCESS_KEY_ID")
+    secret = os.environ.get("DATA_AWS_SECRET_ACCESS_KEY") or os.environ.get(
+        "AWS_SECRET_ACCESS_KEY"
+    )
+    if key and secret:
+        return {"aws_access_key_id": key, "aws_secret_access_key": secret}
+    return {}
+
+
+def _data_s3_client():
+    return boto3.client("s3", **_data_aws_credentials())
+
+
+def _data_storage_options() -> dict:
+    creds = _data_aws_credentials()
+    if not creds:
+        return {"anon": False}
+    return {
+        "key": creds["aws_access_key_id"],
+        "secret": creds["aws_secret_access_key"],
+        "anon": False,
+    }
 
 
 def load_feature_metadata(features_path: str) -> dict:
@@ -24,7 +60,7 @@ def load_feature_metadata(features_path: str) -> dict:
     bucket = metadata_path.split("/")[2]
     key = "/".join(metadata_path.split("/")[3:])
 
-    s3 = boto3.client("s3")
+    s3 = _data_s3_client()
     response = s3.get_object(Bucket=bucket, Key=key)
     metadata = json.loads(response["Body"].read())
 
@@ -49,7 +85,7 @@ def load_features(
     logger.info(f"Loading features from: {features_path}")
 
     # Load features
-    df = pd.read_parquet(features_path, storage_options={"anon": False})
+    df = pd.read_parquet(features_path, storage_options=_data_storage_options())
     logger.info(f"Loaded {len(df)} rows, {len(df.columns)} columns")
 
     # Load metadata
@@ -96,7 +132,7 @@ def load_features_from_feast(
 
         # Carrega Gold parquet para obter entity_df (customer_id + event_timestamp)
         features_path = f"s3://{S3_BUCKET}/gold/credit_card_default_features.parquet"
-        df = pd.read_parquet(features_path, storage_options={"anon": False})
+        df = pd.read_parquet(features_path, storage_options=_data_storage_options())
 
         entity_df = df[["customer_id", "ingestion_time"]].rename(
             columns={"ingestion_time": "event_timestamp"}

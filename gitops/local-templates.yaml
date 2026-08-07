@@ -1,17 +1,21 @@
 # Project-scoped override of the shared `container-step` ClusterWorkflowTemplate
-# (ml-platform/ArgoWorkflows/cluster-workflow-templates.yaml), used only by the
-# `training` task in argo-workflow.yaml. The shared template hardcodes
-# MLFLOW_TRACKING_URI to the old (retired) DataMaster2026 MLflow instance
-# (nginx.mlflow-ns.svc.cluster.local); this repoints just this project's
-# training step at kubernetes-mlflow instead, without touching the shared
-# template used by other projects.
+# (kubernetes-gitops/argo-workflows/cluster-workflow-templates.yaml), used only
+# by the `training` task in argo-workflow.yaml.
 #
-# AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY come from the aws-credentials Secret
-# (envFrom, unchanged) and are the *real* AWS keys used to read
-# s3://datamasters2025/gold/... — they are NOT valid for the MinIO endpoint
-# below, so mlflow.sklearn.log_model()'s upload to MinIO will fail
-# authentication until that credential split is fixed in
-# ml_classification/modeling/data_loader.py (tracked separately).
+# Two things differ from the shared template:
+# 1. MLFLOW_TRACKING_URI points at kubernetes-mlflow (the shared template may
+#    lag behind on other clusters/branches).
+# 2. AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY are sourced from the
+#    kserve-minio-credentials Secret (kserve-minio-credentials.yaml — reused
+#    here, not just for KServe) instead of the aws-credentials Secret (real
+#    AWS) via envFrom like other steps — the training step is the only one
+#    that both reads real S3 (gold features) AND writes to MinIO (mlflow.log_model /
+#    log_artifact) in the same process, and both would otherwise fight over
+#    the same env var names. Real AWS creds are still available, just under
+#    DATA_AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY — see
+#    ml_classification/modeling/data_loader.py's _data_aws_credentials(),
+#    which reads those explicitly for S3 data-lake access instead of relying
+#    on the ambient AWS_ACCESS_KEY_ID/SECRET (reserved here for mlflow->MinIO).
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
@@ -32,9 +36,6 @@ spec:
         image: "{{inputs.parameters.image}}"
         command: ["sh", "-c"]
         args: ["{{inputs.parameters.cmd}}"]
-        envFrom:
-          - secretRef:
-              name: aws-credentials
         env:
           - name: MLFLOW_TRACKING_URI
             value: "http://mlflow-mlflow.mlflow.svc.cluster.local:5000"
@@ -42,6 +43,26 @@ spec:
             value: "http://minio.mlflow.svc.cluster.local:9000"
           - name: MLFLOW_S3_IGNORE_TLS
             value: "true"
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: kserve-minio-credentials
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: kserve-minio-credentials
+                key: AWS_SECRET_ACCESS_KEY
+          - name: DATA_AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: aws-credentials
+                key: AWS_ACCESS_KEY_ID
+          - name: DATA_AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws-credentials
+                key: AWS_SECRET_ACCESS_KEY
         resources:
           requests:
             cpu: "200m"
