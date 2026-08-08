@@ -9,6 +9,15 @@ metadata:
 spec:
   entrypoint: pipeline-dag
   serviceAccountName: argo-workflow-sa
+  # ml-credit-default carries istio-injection: enabled (namespace.yaml) for
+  # the KServe predictor's benefit — it routes through the Istio mesh
+  # (knative-local-gateway). That label is namespace-wide though, so without
+  # this override every plain job pod here (bronze/silver/validate/features/
+  # training) would also get an istio-proxy sidecar, despite having nothing
+  # to do with Knative/Istio. Opt these pods out explicitly instead.
+  podMetadata:
+    annotations:
+      sidecar.istio.io/inject: "false"
   arguments:
     parameters:
       - name: image
@@ -24,6 +33,8 @@ spec:
               template: run
             arguments:
               parameters:
+                - name: step-name
+                  value: bronze
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
@@ -37,6 +48,8 @@ spec:
               template: run
             arguments:
               parameters:
+                - name: step-name
+                  value: silver
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
@@ -50,6 +63,8 @@ spec:
               template: run
             arguments:
               parameters:
+                - name: step-name
+                  value: validate
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
@@ -63,6 +78,8 @@ spec:
               template: run
             arguments:
               parameters:
+                - name: step-name
+                  value: features
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
@@ -79,6 +96,8 @@ spec:
               template: run
             arguments:
               parameters:
+                - name: step-name
+                  value: training
                 - name: image
                   value: "{{workflow.parameters.image}}"
                 - name: cmd

@@ -26,12 +26,16 @@ spec:
     - name: run
       inputs:
         parameters:
+          - name: step-name
           - name: image
           - name: cmd
       retryStrategy:
         limit: "2"
         retryPolicy: OnFailure
       timeout: "30m"
+      metadata:
+        labels:
+          pipeline-step: "{{inputs.parameters.step-name}}"
       container:
         image: "{{inputs.parameters.image}}"
         command: ["sh", "-c"]

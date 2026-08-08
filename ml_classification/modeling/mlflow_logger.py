@@ -11,6 +11,13 @@ import mlflow.sklearn
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
+#: Registered model name shared by every algorithm trained for this project.
+#: Each training run adds a new *version* under this same name (rather than
+#: each algorithm getting its own registered model), so a single stable
+#: `models:/{MODEL_NAME}@champion` reference always resolves to whichever
+#: algorithm/version currently performs best.
+MODEL_NAME = "default-payment-predictor"
+
 
 class MLflowExperimentLogger:
     """Handles MLflow logging for model training experiments."""
@@ -34,7 +41,7 @@ class MLflowExperimentLogger:
         confusion_matrix,
         feature_metadata: dict,
         run_name: str = None,
-    ):
+    ) -> str:
         """Log a complete training run to MLflow.
 
         Args:
@@ -45,6 +52,9 @@ class MLflowExperimentLogger:
             confusion_matrix: Confusion matrix plot
             feature_metadata: Feature metadata dictionary
             run_name: Optional name for the run
+
+        Returns:
+            The run ID, for champion comparison/promotion by the caller.
         """
         algorithm = pipeline.steps[-1][1].__class__.__name__
 
@@ -75,6 +85,29 @@ class MLflowExperimentLogger:
 
             run_id = mlflow.active_run().info.run_id
             logger.success(f"MLflow run logged successfully. Run ID: {run_id}")
+            return run_id
+
+    def promote_to_champion(self, run_id: str) -> None:
+        """Set the `champion` alias on the model version produced by run_id.
+
+        Args:
+            run_id: Run ID of the winning candidate (already logged via
+                log_training_run, so its model version already exists).
+        """
+        client = mlflow.tracking.MlflowClient()
+        versions = [
+            v for v in client.search_model_versions(f"run_id='{run_id}'") if v.name == MODEL_NAME
+        ]
+        if not versions:
+            logger.warning(
+                f"No registered version of '{MODEL_NAME}' found for run {run_id}; "
+                "skipping champion promotion"
+            )
+            return
+
+        version = versions[0].version
+        client.set_registered_model_alias(MODEL_NAME, "champion", version)
+        logger.success(f"Promoted {MODEL_NAME} v{version} (run {run_id}) to champion")
 
     def _log_data_params(self, X_train: pd.DataFrame, X_test: pd.DataFrame):
         """Log data-related parameters."""
@@ -121,9 +154,9 @@ class MLflowExperimentLogger:
         mlflow.sklearn.log_model(
             pipeline,
             artifact_path=algorithm,
-            registered_model_name=f"default-payment-{algorithm.lower()}",
+            registered_model_name=MODEL_NAME,
             signature=signature,
             input_example=X_train.head(3),
         )
 
-        logger.info(f"Model registered: default-payment-{algorithm.lower()}")
+        logger.info(f"Model registered: {MODEL_NAME} ({algorithm})")

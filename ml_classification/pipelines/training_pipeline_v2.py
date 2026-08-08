@@ -63,8 +63,13 @@ def run_training_pipeline(
     # 2. Initialize MLflow logger (responsibility: mlflow_logger)
     mlflow_logger = MLflowExperimentLogger(experiment_name)
 
-    # 3. Train multiple models
+    # 3. Train multiple models, tracking whichever scores best on the
+    # primary metric so it can be promoted to `champion` once all
+    # candidates have been logged.
     models = [logistic_regression_model(), random_forest_model()]
+    primary_metric = "roc_auc"
+    best_run_id = None
+    best_score = float("-inf")
 
     for model in models:
         algorithm = model.__class__.__name__
@@ -81,7 +86,7 @@ def run_training_pipeline(
 
         # 3c. Log to MLflow (responsibility: mlflow_logger)
         run_name = f"{algorithm}_{feature_metadata.get('feature_version')}"
-        mlflow_logger.log_training_run(
+        run_id = mlflow_logger.log_training_run(
             pipeline=trained_pipeline,
             X_train=X_train,
             X_test=X_test,
@@ -91,11 +96,22 @@ def run_training_pipeline(
             run_name=run_name,
         )
 
+        score = metrics.get(primary_metric, float("-inf"))
+        if score > best_score:
+            best_score = score
+            best_run_id = run_id
+
+    # 4. Promote whichever run scored best to `champion`
+    # (responsibility: mlflow_logger)
+    if best_run_id:
+        mlflow_logger.promote_to_champion(best_run_id)
+
     logger.info("=" * 60)
     logger.success("TRAINING PIPELINE V2 COMPLETED")
     logger.info("=" * 60)
     logger.info(f"Models trained: {len(models)}")
     logger.info(f"Experiment: {experiment_name}")
+    logger.info(f"Champion run ({primary_metric}={best_score:.4f}): {best_run_id}")
 
 
 if __name__ == "__main__":
