@@ -102,3 +102,34 @@ spec:
                   value: "{{workflow.parameters.image}}"
                 - name: cmd
                   value: "uv run python ml_classification/pipelines/training_pipeline_v2.py"
+
+          - name: promote
+            dependencies: [training]
+            # Opens a PR pointing kserve-inference.yaml's storageUri at whatever
+            # MLflow run training_pipeline_v2.py just promoted to the `champion`
+            # alias, and enables auto-merge. Shared, project-agnostic template —
+            # see ml-platform/ArgoWorkflows/cluster-workflow-templates.yaml's
+            # promote-model ClusterWorkflowTemplate and base-image/scripts/
+            # promote_model.py. Needs a github-credentials Secret (key: token,
+            # `repo` scope) in this namespace.
+            templateRef:
+              name: promote-model
+              clusterScope: true
+              template: run
+            arguments:
+              parameters:
+                - name: image
+                  value: "{{workflow.parameters.image}}"
+                - name: model-name
+                  value: default-payment-predictor
+                - name: repo
+                  value: flavio185/ml-default-payment-project
+                - name: base-branch
+                  value: feature/three-pipeline-architecture
+                - name: yaml-path
+                  value: gitops/kserve-inference.yaml
+                # Shared template's default is the stale/retired shared MLflow
+                # endpoint (same one container-step-project overrides above) —
+                # point it at this project's real instance instead.
+                - name: mlflow-tracking-uri
+                  value: "http://mlflow-mlflow.mlflow.svc.cluster.local:5000"

@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - local-templates.yaml
+  - argo-workflows-minio-secret.yaml
   - argo-workflow.yaml
   - cron-workflow.yaml
   - argo-events.yaml

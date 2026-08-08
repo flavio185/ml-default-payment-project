@@ -2,6 +2,11 @@ name: CI
 on:
   push:
     branches: [main, develop, feature/*, hotfix/*, release/*]
+  pull_request:
+    # Needed so `validate` runs as a PR check — required for the promote/*
+    # PRs opened by promote_model.py to auto-merge (gh pr merge --auto waits
+    # on required status checks reported against the PR's head commit).
+    branches: [main, develop, feature/*, hotfix/*, release/*]
   workflow_dispatch:
 
 jobs:

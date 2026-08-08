@@ -101,17 +101,44 @@ def run_training_pipeline(
             best_score = score
             best_run_id = run_id
 
-    # 4. Promote whichever run scored best to `champion`
-    # (responsibility: mlflow_logger)
-    if best_run_id:
+    # 4. Promote the best of today's candidates to `champion` only if it
+    # actually beats the current champion — otherwise every run reassigns
+    # champion to whichever candidate merely won this round, even when both
+    # are worse than what's already deployed, and the promote DAG step ends
+    # up opening a PR on every single run. (responsibility: mlflow_logger)
+    champion_score = mlflow_logger.get_champion_score(primary_metric)
+    promoted = False
+    if not best_run_id:
+        logger.warning("No candidate produced a valid score; skipping promotion")
+    elif champion_score is None:
+        logger.info("No existing champion — promoting best candidate unconditionally")
         mlflow_logger.promote_to_champion(best_run_id)
+        promoted = True
+    elif best_score > champion_score:
+        logger.info(
+            f"New best ({primary_metric}={best_score:.4f}) beats champion "
+            f"({primary_metric}={champion_score:.4f})"
+        )
+        mlflow_logger.promote_to_champion(best_run_id)
+        promoted = True
+    else:
+        logger.info(
+            f"New best ({primary_metric}={best_score:.4f}) does not beat champion "
+            f"({primary_metric}={champion_score:.4f}); keeping current champion"
+        )
 
     logger.info("=" * 60)
     logger.success("TRAINING PIPELINE V2 COMPLETED")
     logger.info("=" * 60)
     logger.info(f"Models trained: {len(models)}")
     logger.info(f"Experiment: {experiment_name}")
-    logger.info(f"Champion run ({primary_metric}={best_score:.4f}): {best_run_id}")
+    if promoted:
+        logger.info(f"New champion ({primary_metric}={best_score:.4f}): {best_run_id}")
+    else:
+        logger.info(
+            f"Champion unchanged ({primary_metric}={champion_score:.4f}); "
+            f"best candidate this run scored {best_score:.4f}"
+        )
 
 
 if __name__ == "__main__":

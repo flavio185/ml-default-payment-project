@@ -87,6 +87,22 @@ class MLflowExperimentLogger:
             logger.success(f"MLflow run logged successfully. Run ID: {run_id}")
             return run_id
 
+    def get_champion_score(self, metric_name: str) -> float | None:
+        """Return the current champion's value for metric_name.
+
+        Returns None if no champion alias exists yet (first-ever training
+        run), so callers can distinguish "no champion to beat" from "champion
+        scored 0".
+        """
+        client = mlflow.tracking.MlflowClient()
+        try:
+            champion_version = client.get_model_version_by_alias(MODEL_NAME, "champion")
+        except mlflow.exceptions.MlflowException:
+            return None
+
+        run = client.get_run(champion_version.run_id)
+        return run.data.metrics.get(metric_name)
+
     def promote_to_champion(self, run_id: str) -> None:
         """Set the `champion` alias on the model version produced by run_id.
 

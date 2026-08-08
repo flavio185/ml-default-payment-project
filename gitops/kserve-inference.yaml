@@ -16,13 +16,12 @@ spec:
     model:
       modelFormat:
         name: sklearn
-      # default-payment-randomforestclassifier v1 (run
-      # a25c4a6715cc4d4193e815d6a09e6e8d, experiment "baseline-models"),
-      # picked over the logistic regression run on every metric (accuracy
-      # 0.810 vs 0.809, ROC AUC 0.770 vs 0.709, F1 0.399 vs 0.363). No
-      # champion-alias/model-selection logic exists yet in
-      # training_pipeline_v2 — this was picked and pinned manually. Update
-      # this storageUri by hand after each retrain until that's automated.
+      # Kept in sync automatically: training_pipeline_v2 promotes the
+      # best-scoring run (by ROC AUC) to the `champion` alias on the shared
+      # "default-payment-predictor" registered model (mlflow_logger.py), and
+      # the `promote` DAG step (argo-workflow.yaml, promote_model.py) resolves
+      # that alias and pushes the resulting storageUri here. Don't hand-edit —
+      # it'll be overwritten on the next promote run.
       storageUri: "s3://mlflow-artifacts/mlflow/1/models/m-9b48b25ce07c4226afc93cf6e7db0878/artifacts"
       resources:
         requests:
