@@ -32,6 +32,11 @@ dependencies = [
     "s3fs>=2025.7.0",
     "pre-commit>=4.4.0",
     "feast[redis]>=0.41",
+    # Used by the `promote` DAG step (gitops/argo-workflow.yaml's promote-model
+    # ClusterWorkflowTemplate). Pinned to a branch for now since ml-platform's
+    # feature/promote-model-shared-template hasn't merged to main yet — switch
+    # this to a tag once it has, so bumps are deliberate rather than floating.
+    "mlops-promote @ git+https://github.com/flavio185/ml-platform@main#subdirectory=packages/mlops-promote",
 ]
 requires-python = "~=3.12.0"
 
