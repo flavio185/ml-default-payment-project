@@ -22,7 +22,7 @@ spec:
       # the `promote` DAG step (argo-workflow.yaml, promote_model.py) resolves
       # that alias and pushes the resulting storageUri here. Don't hand-edit —
       # it'll be overwritten on the next promote run.
-      storageUri: "s3://mlflow-artifacts/mlflow/1/models/m-fa9017c7871542e5937e93dd6ba18698/artifacts"
+      storageUri: "s3://mlflow-artifacts/mlflow/1/models/m-1368647e076f472f95cbe249add9cfb9/artifacts"
       resources:
         requests:
           cpu: "100m"
