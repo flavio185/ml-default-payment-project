@@ -10,24 +10,9 @@ load_dotenv()
 PROJ_ROOT = Path(__file__).resolve().parents[1]
 logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
 
-DATA_DIR = PROJ_ROOT / "data"
-RAW_DATA_DIR = DATA_DIR / "raw"
-INTERIM_DATA_DIR = DATA_DIR / "interim"
-PROCESSED_DATA_DIR = DATA_DIR / "processed"
-EXTERNAL_DATA_DIR = DATA_DIR / "external"
-BRONZE_DATA_DIR = DATA_DIR / "bronze"
-SILVER_DATA_DIR = DATA_DIR / "silver"
-GOLD_DATA_DIR = DATA_DIR / "gold"
 S3_BUCKET = "datamasters2025"
-VALIDATION_REPORTS_DIR = DATA_DIR / "validation_reports"
-
-MODELS_DIR = PROJ_ROOT / "models"
-LOGS_DIR = PROJ_ROOT / "logs"
-
-REPORTS_DIR = PROJ_ROOT / "reports"
-FIGURES_DIR = REPORTS_DIR / "figures"
-
-AWS_SHARED_CREDENTIALS_FILE = PROJ_ROOT / ".aws/credentials"
+VALIDATION_REPORTS_DIR = PROJ_ROOT / "data" / "validation_reports"
+DRIFT_REPORTS_DIR = PROJ_ROOT / "data" / "drift_reports"
 
 # Feast
 FEAST_REPO_PATH = PROJ_ROOT / "feast"

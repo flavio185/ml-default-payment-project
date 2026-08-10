@@ -78,13 +78,18 @@ validate:
 	uv run data_processing/silver/validate_data.py
 
 ## Create Gold Features
-.PHONY: gold
-gold: validate
-	uv run data_processing/gold/build_features.py
+.PHONY: features
+features: validate
+	uv run ml_classification/pipelines/feature_pipeline.py
 
-## Run full pipeline: Bronze → Silver → Validate → Gold
+## Check Gold features for drift against the champion's training data (PSI)
+.PHONY: drift-check
+drift-check:
+	uv run ml_classification/pipelines/drift_check.py
+
+## Run full pipeline: Bronze → Silver → Validate → Features
 .PHONY: pipeline
-pipeline: requirements bronze silver gold
+pipeline: requirements bronze silver features
 	@echo ">>> Full pipeline executed successfully!"
 
 
@@ -95,7 +100,7 @@ pipeline: requirements bronze silver gold
 ## Make train
 .PHONY: train
 train: requirements
-	uv run ml_classification/modeling/train.py
+	uv run ml_classification/pipelines/training_pipeline_v2.py
 
 #################################################################################
 # Self Documenting Commands                                                     #

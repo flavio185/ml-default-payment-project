@@ -159,14 +159,6 @@ def validate():
     _run_command(["uv", "run", "python", "data_processing/silver/validate_data.py"])
 
 
-@app.command()
-def gold():
-    """Cria features na camada Gold (legacy - use feature-pipeline instead)."""
-    console.print("[bold]Criando features na camada Gold...[/bold]")
-    validate()  # Garante que a validação seja executada antes
-    _run_command(["uv", "run", "python", "data_processing/gold/build_features.py"])
-
-
 # --- New Pipeline Commands ---
 
 
@@ -186,6 +178,13 @@ def training_pipeline():
     requirements()
     _run_command(["uv", "run", "python", "ml_classification/pipelines/training_pipeline_v2.py"])
     console.print("[bold green]>>> TRAINING PIPELINE COMPLETED[/bold green]")
+
+
+@app.command(name="drift-check")
+def drift_check():
+    """Compara as features Gold mais recentes com os dados de treino do champion (PSI)."""
+    console.print("[bold]Executando verificação de drift...[/bold]")
+    _run_command(["uv", "run", "python", "ml_classification/pipelines/drift_check.py"])
 
 
 @app.command(name="inference-pipeline")
@@ -209,6 +208,13 @@ def inference_pipeline(
         ]
     )
     console.print("[bold green]>>> INFERENCE PIPELINE COMPLETED[/bold green]")
+
+
+@app.command(name="test-inference-service")
+def test_inference_service():
+    """Testa o InferenceService default-payment-predictor já em execução (smoke test)."""
+    console.print("[bold]Testando InferenceService...[/bold]")
+    _run_command(["uv", "run", "python", "scripts/test_inference_service.py"])
 
 
 @app.command(name="full-pipeline")
