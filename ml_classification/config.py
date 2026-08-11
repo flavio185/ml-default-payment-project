@@ -14,5 +14,10 @@ S3_BUCKET = "datamasters2025"
 VALIDATION_REPORTS_DIR = PROJ_ROOT / "data" / "validation_reports"
 DRIFT_REPORTS_DIR = PROJ_ROOT / "data" / "drift_reports"
 
+# Registered MLflow model name every training run's model version is added
+# under, so a single stable `models:/{MODEL_NAME}@champion` reference always
+# resolves to whichever algorithm/version currently performs best.
+MODEL_NAME = "default-payment-predictor"
+
 # Feast
 FEAST_REPO_PATH = PROJ_ROOT / "feast"

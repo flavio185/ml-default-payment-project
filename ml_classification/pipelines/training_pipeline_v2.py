@@ -2,20 +2,24 @@
 
 This pipeline orchestrates model training with clear separation of concerns:
 - Data loading: data_loader.py
-- Pipeline creation: pipeline_builder.py
-- Training: trainer.py
-- MLflow logging: mlflow_logger.py
+- Pipeline creation + training + MLflow logging: mlops_toolkit (shared
+  across projects; see ml-platform/packages/mlops-toolkit)
+- Task-specific evaluation + preprocessing: eval.py / preprocessing.py
+  (still project-owned -- binary-classification metrics and this project's
+  categorical+numeric column split are exactly the parts that still fork
+  between projects)
 """
 
 from loguru import logger
+from mlops_toolkit.modeling import create_sklearn_pipeline, train_and_evaluate
+from mlops_toolkit.tracking import MLflowExperimentLogger
 import typer
 
-from ml_classification.config import S3_BUCKET
+from ml_classification.config import MODEL_NAME, S3_BUCKET
+from ml_classification.features.preprocessing import build_preprocessor
 from ml_classification.modeling.data_loader import load_features
-from ml_classification.modeling.mlflow_logger import MLflowExperimentLogger
+from ml_classification.modeling.eval import evaluate_model
 from ml_classification.modeling.models import logistic_regression_model, random_forest_model
-from ml_classification.modeling.pipeline_builder import create_sklearn_pipeline
-from ml_classification.modeling.trainer import train_and_evaluate
 
 app = typer.Typer()
 
@@ -32,9 +36,9 @@ def run_training_pipeline(
 
     This pipeline is much simpler - it just orchestrates the components:
     1. Load data (data_loader)
-    2. Create pipeline (pipeline_builder)
-    3. Train and evaluate (trainer)
-    4. Log to MLflow (mlflow_logger)
+    2. Create pipeline (mlops_toolkit, with this project's preprocessor)
+    3. Train and evaluate (mlops_toolkit, with this project's evaluator)
+    4. Log to MLflow (mlops_toolkit)
 
     Args:
         features_path: Path to features in Gold layer
@@ -60,8 +64,8 @@ def run_training_pipeline(
         f"Engineered features: {', '.join(feature_metadata.get('engineered_features', []))}"
     )
 
-    # 2. Initialize MLflow logger (responsibility: mlflow_logger)
-    mlflow_logger = MLflowExperimentLogger(experiment_name)
+    # 2. Initialize MLflow logger (responsibility: mlops_toolkit.tracking)
+    mlflow_logger = MLflowExperimentLogger(experiment_name, model_name=MODEL_NAME)
 
     # 3. Train multiple models, tracking whichever scores best on the
     # primary metric so it can be promoted to `champion` once all
@@ -76,15 +80,15 @@ def run_training_pipeline(
         logger.info("-" * 60)
         logger.info(f"Training {algorithm}...")
 
-        # 3a. Create pipeline (responsibility: pipeline_builder)
-        pipeline = create_sklearn_pipeline(X_train, model)
+        # 3a. Create pipeline (responsibility: mlops_toolkit, this project's preprocessor)
+        pipeline = create_sklearn_pipeline(X_train, model, preprocessor_builder=build_preprocessor)
 
-        # 3b. Train and evaluate (responsibility: trainer)
+        # 3b. Train and evaluate (responsibility: mlops_toolkit, this project's evaluator)
         trained_pipeline, metrics, cm, y_proba = train_and_evaluate(
-            pipeline, X_train, y_train, X_test, y_test
+            pipeline, X_train, y_train, X_test, y_test, evaluate_fn=evaluate_model
         )
 
-        # 3c. Log to MLflow (responsibility: mlflow_logger)
+        # 3c. Log to MLflow (responsibility: mlops_toolkit.tracking)
         run_name = f"{algorithm}_{feature_metadata.get('feature_version')}"
         run_id = mlflow_logger.log_training_run(
             pipeline=trained_pipeline,
@@ -105,7 +109,7 @@ def run_training_pipeline(
     # actually beats the current champion — otherwise every run reassigns
     # champion to whichever candidate merely won this round, even when both
     # are worse than what's already deployed, and the promote DAG step ends
-    # up opening a PR on every single run. (responsibility: mlflow_logger)
+    # up opening a PR on every single run. (responsibility: mlops_toolkit.tracking)
     champion_score = mlflow_logger.get_champion_score(primary_metric)
     promoted = False
     if not best_run_id:

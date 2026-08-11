@@ -1,0 +1,127 @@
+{
+  "generated_at": "2026-08-10T04:29:40.821417+00:00",
+  "model_name": "default-payment-predictor",
+  "baseline": {
+    "uri": "s3://datamasters2025/gold/credit_card_default_features.parquet",
+    "version_id": "1dna9ldgmT37nedg1.W6883kmmmvsXZa",
+    "champion_run_id": "4c1e2be334c2463bbe9b254585647bf3"
+  },
+  "current": {
+    "uri": "s3://datamasters2025/gold/credit_card_default_features.parquet"
+  },
+  "thresholds": {
+    "warning": 0.1,
+    "critical": 0.2
+  },
+  "overall_status": "OK",
+  "features": {
+    "limit_bal": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "sex": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "education": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "marriage": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "age": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_0": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_2": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_3": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_4": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_5": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_6": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "bill_amt1": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "bill_amt2": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "bill_amt3": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "bill_amt4": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "bill_amt5": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "bill_amt6": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_amt1": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_amt2": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_amt3": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_amt4": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_amt5": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_amt6": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "age_bin": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "bill_trend": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "pay_ratio": {
+      "psi": 0.0,
+      "status": "OK"
+    },
+    "utilization": {
+      "psi": 0.0,
+      "status": "OK"
+    }
+  }
+}

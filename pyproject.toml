@@ -36,6 +36,11 @@ dependencies = [
     # feature/promote-model-shared-template hasn't merged to main yet — switch
     # this to a tag once it has, so bumps are deliberate rather than floating.
     "mlops-promote @ git+https://github.com/flavio185/ml-platform@main#subdirectory=packages/mlops-promote",
+    # Shared training/tracking/pipeline plumbing (MLflowExperimentLogger,
+    # create_sklearn_pipeline, train_and_evaluate, S3 dataset-lineage
+    # helpers) extracted from this project and iris-project. Same pinning
+    # rationale as mlops-promote above.
+    "mlops-toolkit @ git+https://github.com/flavio185/ml-platform@main#subdirectory=packages/mlops-toolkit",
 ]
 requires-python = "~=3.12.0"
 

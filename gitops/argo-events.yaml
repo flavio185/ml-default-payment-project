@@ -1,7 +1,8 @@
 # Argo Events for drift-triggered model retraining.
-# Extracted from the TODO in ml-platform/Inference/KNative/trigger.yaml:42-109.
+# See ml-platform/Inference/KNativeEventing/README.md "Per-project triggers
+# (optional)" for the full pattern this implements.
 #
-# Flow: drift-detector service detects covariate drift
+# Flow: ml_classification/pipelines/drift_check.py detects covariate drift
 #       -> POSTs to EventSource webhook
 #       -> Sensor triggers retraining workflow
 

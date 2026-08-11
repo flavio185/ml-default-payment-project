@@ -1,8 +1,8 @@
 from loguru import logger
+from mlops_toolkit.io import wait_for_s3_object
 import pandas as pd
 import typer
 
-from data_processing.check_s3 import wait_for_s3_object
 from ml_classification.config import S3_BUCKET
 
 app = typer.Typer()

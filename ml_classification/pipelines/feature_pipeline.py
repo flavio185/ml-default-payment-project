@@ -5,11 +5,9 @@ It creates versioned features that are consumed by the training pipeline.
 """
 
 from datetime import datetime, timezone
-import json
 
-import boto3
-from data_processing.check_s3 import wait_for_s3_object
 from loguru import logger
+from mlops_toolkit.io import get_dataset_metadata, save_feature_metadata, wait_for_s3_object
 import pandas as pd
 import typer
 
@@ -39,58 +37,6 @@ def _feast_materialize():
         logger.success("Feast: features registradas e materializadas com sucesso")
     except Exception as e:
         logger.warning(f"Feast materialization skipped: {e}")
-
-
-def get_dataset_metadata(data_path: str) -> dict:
-    """Get metadata for the source dataset from S3.
-
-    Args:
-        data_path: S3 path to the dataset
-
-    Returns:
-        Dictionary with dataset metadata
-    """
-    bucket = data_path.split("/")[2]
-    key = "/".join(data_path.split("/")[3:])
-    s3 = boto3.client("s3")
-
-    # Get object versions
-    versions = s3.list_object_versions(Bucket=bucket, Prefix=key)
-    latest_version = versions["Versions"][0]  # Assumes latest is first
-
-    metadata = {
-        "source_uri": data_path,
-        "version_id": latest_version["VersionId"],
-        "last_modified": latest_version["LastModified"].isoformat(),
-        "size_bytes": latest_version["Size"],
-    }
-    return metadata
-
-
-def save_feature_metadata(
-    feature_metadata: dict, output_path: str, metadata_suffix: str = "_metadata.json"
-) -> None:
-    """Save feature metadata to S3 alongside the feature data.
-
-    Args:
-        feature_metadata: Dictionary with feature metadata
-        output_path: S3 path where features are saved
-        metadata_suffix: Suffix for metadata file
-    """
-    # Create metadata path by replacing .parquet with _metadata.json
-    metadata_path = output_path.replace(".parquet", metadata_suffix)
-
-    bucket = metadata_path.split("/")[2]
-    key = "/".join(metadata_path.split("/")[3:])
-
-    s3 = boto3.client("s3")
-    s3.put_object(
-        Bucket=bucket,
-        Key=key,
-        Body=json.dumps(feature_metadata, indent=2),
-        ContentType="application/json",
-    )
-    logger.info(f"Feature metadata saved to: {metadata_path}")
 
 
 @app.command()

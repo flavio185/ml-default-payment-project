@@ -21,7 +21,6 @@ from datetime import datetime, timezone
 import io
 import json
 
-import boto3
 from loguru import logger
 import mlflow.artifacts
 from mlflow.tracking import MlflowClient
@@ -30,6 +29,7 @@ import pandas as pd
 import typer
 
 from ml_classification.config import DRIFT_REPORTS_DIR, S3_BUCKET
+from ml_classification.modeling.data_loader import _data_s3_client, _data_storage_options
 
 app = typer.Typer()
 
@@ -86,24 +86,38 @@ def resolve_champion_gold_uri(model_name: str) -> tuple[str, str, str]:
     run_id = champion_version.run_id
     assert run_id is not None, f"champion version of {model_name} has no run_id"
 
+    gold_uri = f"s3://{S3_BUCKET}/gold/credit_card_default_features.parquet"
+
+    # Fast path: dataset_version_id is a first-class run param (mlflow_logger.py's
+    # _log_dataset_metadata) -- no artifact download, no MinIO-vs-real-S3 credential
+    # juggling, just a run lookup. Gated on source_dataset_version_id (a param name
+    # that only exists post-fix) because dataset_version_id itself isn't a safe
+    # signal: older runs already have a param under that exact name, logged by the
+    # pre-fix code with the OLD meaning (the Silver source, not Gold) -- trusting it
+    # unconditionally would silently feed a Silver version_id into a Gold S3 lookup.
+    run = client.get_run(run_id)
+    if "source_dataset_version_id" in run.data.params:
+        version_id = run.data.params.get("dataset_version_id")
+        if version_id and version_id != "unknown":
+            return gold_uri, version_id, run_id
+
+    # Runs logged before dataset_uri/dataset_version_id existed as run params
+    # may still have gold_dataset in the feature_metadata.json artifact.
     local_path = mlflow.artifacts.download_artifacts(
         run_id=run_id, artifact_path="feature_metadata.json"
     )
     with open(local_path) as f:
         feature_metadata = json.load(f)
 
-    gold_uri = f"s3://{S3_BUCKET}/gold/credit_card_default_features.parquet"
-
     gold_dataset = feature_metadata.get("gold_dataset")
     if gold_dataset:
         return gold_uri, gold_dataset["version_id"], run_id
 
     # Fallback for champion runs logged before feature_pipeline.py captured
-    # gold_dataset: find the S3 version closest to (at or before) run start.
-    run = client.get_run(run_id)
+    # gold_dataset at all: find the S3 version closest to (at or before) run start.
     run_time_ms = run.info.start_time
     bucket, key = _parse_s3_uri(gold_uri)
-    s3 = boto3.client("s3")
+    s3 = _data_s3_client()
     versions = s3.list_object_versions(Bucket=bucket, Prefix=key).get("Versions", [])
     versions_before = [v for v in versions if v["LastModified"].timestamp() * 1000 <= run_time_ms]
     if not versions_before:
@@ -123,7 +137,7 @@ def read_parquet_version(uri: str, version_id: str) -> pd.DataFrame:
     """Read a specific S3 object version directly via boto3 -- avoids relying
     on fsspec/s3fs version-handling, which varies by version/config."""
     bucket, key = _parse_s3_uri(uri)
-    obj = boto3.client("s3").get_object(Bucket=bucket, Key=key, VersionId=version_id)
+    obj = _data_s3_client().get_object(Bucket=bucket, Key=key, VersionId=version_id)
     return pd.read_parquet(io.BytesIO(obj["Body"].read()))
 
 
@@ -152,7 +166,7 @@ def run_drift_check(
     logger.info(f"Loaded {len(baseline_df)} baseline rows")
 
     logger.info(f"Current: {current_gold_path} (latest)")
-    current_df = pd.read_parquet(current_gold_path, storage_options={"anon": False})
+    current_df = pd.read_parquet(current_gold_path, storage_options=_data_storage_options())
     logger.info(f"Loaded {len(current_df)} current rows")
 
     columns = [
