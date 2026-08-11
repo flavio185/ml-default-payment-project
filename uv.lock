@@ -1903,7 +1903,7 @@ wheels = [
 [[package]]
 name = "mlops-promote"
 version = "0.1.0"
-source = { git = "https://github.com/flavio185/ml-platform?subdirectory=packages%2Fmlops-promote&rev=main#ef7e526aaefd829a687a47f611cf472830c5cb3a" }
+source = { git = "https://github.com/flavio185/ml-platform?subdirectory=packages%2Fmlops-promote&rev=main#ce36220775babe8bd929f3aca473e148b057f96f" }
 dependencies = [
     { name = "loguru" },
     { name = "mlflow", extra = ["extras"] },
@@ -1913,7 +1913,7 @@ dependencies = [
 [[package]]
 name = "mlops-toolkit"
 version = "0.1.0"
-source = { git = "https://github.com/flavio185/ml-platform?subdirectory=packages%2Fmlops-toolkit&rev=main#ef7e526aaefd829a687a47f611cf472830c5cb3a" }
+source = { git = "https://github.com/flavio185/ml-platform?subdirectory=packages%2Fmlops-toolkit&rev=main#ce36220775babe8bd929f3aca473e148b057f96f" }
 dependencies = [
     { name = "boto3" },
     { name = "loguru" },
