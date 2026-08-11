@@ -7,6 +7,22 @@
 #       -> Sensor triggers retraining workflow
 
 ---
+# EventSource/Sensor pods don't run at all without this -- both stay stuck
+# at "EventBus not found" (no backing deployment ever gets created) until an
+# EventBus named "default" exists in this namespace, since neither resource
+# below sets an explicit spec.eventBusName. Single-replica NATS StreamLayer
+# is the minimal viable EventBus; fine for this low-volume webhook.
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: default
+  namespace: ml-credit-default
+spec:
+  nats:
+    native:
+      replicas: 1
+
+---
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
@@ -40,6 +56,13 @@ metadata:
   name: retraining-sensor
   namespace: ml-credit-default
 spec:
+  # Without this the Sensor pod runs as the bare `default` ServiceAccount,
+  # which can't get workflowtemplates or create workflows -- the trigger
+  # fires (event received, matched) but submission fails with
+  # PermissionDenied. argo-workflow-sa is the same SA the pipeline steps
+  # themselves already run as, so it already has exactly this RBAC.
+  template:
+    serviceAccountName: argo-workflow-sa
   dependencies:
     - name: drift-event
       eventSourceName: drift-detected-source

@@ -20,6 +20,8 @@ start time.
 from datetime import datetime, timezone
 import io
 import json
+import urllib.error
+import urllib.request
 
 from loguru import logger
 import mlflow.artifacts
@@ -38,6 +40,34 @@ EXCLUDE_COLUMNS = {"customer_id", "default_payment_next_month", "ingestion_time"
 
 PSI_WARNING_THRESHOLD = 0.1
 PSI_CRITICAL_THRESHOLD = 0.2
+
+# In-cluster DNS name for the EventSource's webhook Service (see
+# gitops/argo-events.yaml). Only reachable from inside ml-credit-default, or
+# wherever else that Service is resolvable -- not from a laptop.
+DEFAULT_DRIFT_WEBHOOK_URL = (
+    "http://drift-detected-source-eventsource-svc.ml-credit-default.svc.cluster.local:12000"
+    "/drift-detected"
+)
+
+
+def notify_drift_detected(webhook_url: str, report: dict) -> None:
+    """POST the drift report to the EventSource webhook, firing the Sensor's
+    retraining Workflow (see gitops/argo-events.yaml).
+
+    Best-effort: a delivery failure here shouldn't fail the drift check
+    itself -- the JSON report on disk is already the check's primary output,
+    and an unreachable webhook (e.g. running this outside the cluster) is
+    something to log and move on from, not crash over.
+    """
+    data = json.dumps(report).encode()
+    req = urllib.request.Request(
+        webhook_url, data=data, headers={"Content-Type": "application/json"}, method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            logger.success(f"Drift event posted to {webhook_url}: HTTP {resp.status}")
+    except (urllib.error.URLError, urllib.error.HTTPError) as e:
+        logger.warning(f"Failed to POST drift event to {webhook_url}: {e}")
 
 
 def compute_psi(baseline: pd.Series, current: pd.Series, buckets: int = 10) -> float:
@@ -146,6 +176,8 @@ def run_drift_check(
     current_gold_path: str = "s3://" + S3_BUCKET + "/gold/credit_card_default_features.parquet",
     psi_warning_threshold: float = PSI_WARNING_THRESHOLD,
     psi_critical_threshold: float = PSI_CRITICAL_THRESHOLD,
+    drift_webhook_url: str = DEFAULT_DRIFT_WEBHOOK_URL,
+    notify_on_drift: bool = True,
 ):
     """Compare the latest Gold features against the champion's training data (PSI).
 
@@ -154,6 +186,11 @@ def run_drift_check(
         current_gold_path: Gold parquet to check (defaults to the latest write).
         psi_warning_threshold: PSI at/above this is flagged WARNING.
         psi_critical_threshold: PSI at/above this is flagged CRITICAL.
+        drift_webhook_url: EventSource webhook to POST to when overall_status is
+            CRITICAL, triggering the retraining Sensor.
+        notify_on_drift: Set to False to skip the webhook POST (e.g. running
+            this ad hoc, outside the cluster, where the webhook isn't reachable
+            anyway).
     """
     logger.info("=" * 60)
     logger.info("DRIFT CHECK STARTED")
@@ -207,6 +244,9 @@ def run_drift_check(
     report_path = DRIFT_REPORTS_DIR / f"drift_report_{timestamp}.json"
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2)
+
+    if overall_status == "CRITICAL" and notify_on_drift:
+        notify_drift_detected(drift_webhook_url, report)
 
     logger.info("=" * 60)
     if overall_status == "CRITICAL":
