@@ -20,7 +20,11 @@ dependencies = [
     "pip",
     "pytest",
     "python-dotenv",
-    "ruff",
+    # Pinned to match .pre-commit-config.yaml's ruff-pre-commit rev so
+    # `make lint`/CI and the pre-commit hook always agree -- left unpinned,
+    # `uv lock` floats this to whatever's newest on PyPI on every full
+    # re-resolution, which can newly enable rules pre-commit doesn't check.
+    "ruff==0.14.5",
     "typer",
     "pandas",
     "mlflow[extras]>=3.1.1",
