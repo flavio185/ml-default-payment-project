@@ -67,6 +67,12 @@ def run_training_pipeline(
     # 2. Initialize MLflow logger (responsibility: mlops_toolkit.tracking)
     mlflow_logger = MLflowExperimentLogger(experiment_name, model_name=MODEL_NAME)
 
+    # Gold snapshot this training run actually loaded features from (set by
+    # feature_pipeline.py at write time). mlops_toolkit doesn't reach into
+    # feature_metadata's shape itself -- this project resolves and passes it
+    # explicitly, since it's the one that knows what "gold_dataset" means.
+    gold_dataset = feature_metadata.get("gold_dataset", {})
+
     # 3. Train multiple models, tracking whichever scores best on the
     # primary metric so it can be promoted to `champion` once all
     # candidates have been logged.
@@ -98,6 +104,9 @@ def run_training_pipeline(
             confusion_matrix=cm,
             feature_metadata=feature_metadata,
             run_name=run_name,
+            dataset_uri=gold_dataset.get("source_uri"),
+            dataset_version_id=gold_dataset.get("version_id"),
+            dataset_last_modified=gold_dataset.get("last_modified"),
         )
 
         score = metrics.get(primary_metric, float("-inf"))
