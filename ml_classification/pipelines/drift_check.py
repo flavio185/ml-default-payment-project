@@ -9,7 +9,7 @@ for where results should surface beyond a local report (MLflow metrics,
 Prometheus, etc.) -- deliberately out of scope for this first pass.
 
 Baseline resolution: feature_pipeline.py now captures the S3 version_id of
-each Gold parquet it writes (`gold_dataset` in the saved *_metadata.json),
+each Gold parquet it writes (`training_dataset` in the saved *_metadata.json),
 so a champion trained on an older run can still be compared against its
 *exact* Gold snapshot even though the Gold file at the fixed S3 key has
 since been overwritten by later runs. Champion runs logged before that field
@@ -88,33 +88,32 @@ def resolve_champion_gold_uri(model_name: str) -> tuple[str, str, str]:
 
     gold_uri = f"s3://{S3_BUCKET}/gold/credit_card_default_features.parquet"
 
-    # Fast path: dataset_version_id is a first-class run param (mlflow_logger.py's
-    # _log_dataset_metadata) -- no artifact download, no MinIO-vs-real-S3 credential
-    # juggling, just a run lookup. Gated on source_dataset_version_id (a param name
-    # that only exists post-fix) because dataset_version_id itself isn't a safe
-    # signal: older runs already have a param under that exact name, logged by the
-    # pre-fix code with the OLD meaning (the Silver source, not Gold) -- trusting it
-    # unconditionally would silently feed a Silver version_id into a Gold S3 lookup.
+    # Fast path: dataset_version_id is a first-class run param (mlops_toolkit's
+    # MLflowExperimentLogger._log_dataset_metadata) -- no artifact download, no
+    # MinIO-vs-real-S3 credential juggling, just a run lookup. Gated on
+    # dataset_uri's presence (not just a truthy dataset_version_id) because
+    # dataset_version_id can be the literal string "unknown" rather than absent.
     run = client.get_run(run_id)
-    if "source_dataset_version_id" in run.data.params:
+    if "dataset_uri" in run.data.params:
         version_id = run.data.params.get("dataset_version_id")
         if version_id and version_id != "unknown":
             return gold_uri, version_id, run_id
 
     # Runs logged before dataset_uri/dataset_version_id existed as run params
-    # may still have gold_dataset in the feature_metadata.json artifact.
+    # may still have training_dataset in the feature_metadata.json artifact.
     local_path = mlflow.artifacts.download_artifacts(
         run_id=run_id, artifact_path="feature_metadata.json"
     )
     with open(local_path) as f:
         feature_metadata = json.load(f)
 
-    gold_dataset = feature_metadata.get("gold_dataset")
-    if gold_dataset:
-        return gold_uri, gold_dataset["version_id"], run_id
+    training_dataset = feature_metadata.get("training_dataset")
+    if training_dataset:
+        return gold_uri, training_dataset["version_id"], run_id
 
     # Fallback for champion runs logged before feature_pipeline.py captured
-    # gold_dataset at all: find the S3 version closest to (at or before) run start.
+    # training_dataset at all: find the S3 version closest to (at or before)
+    # run start.
     run_time_ms = run.info.start_time
     bucket, key = _parse_s3_uri(gold_uri)
     s3 = _data_s3_client()
@@ -123,11 +122,11 @@ def resolve_champion_gold_uri(model_name: str) -> tuple[str, str, str]:
     if not versions_before:
         raise ValueError(
             f"No Gold object version found at/before champion run {run_id}'s start time, "
-            f"and its feature_metadata.json has no gold_dataset field to pin an exact one."
+            f"and its feature_metadata.json has no training_dataset field to pin an exact one."
         )
     nearest = max(versions_before, key=lambda v: v["LastModified"])
     logger.warning(
-        f"Champion run {run_id} predates gold_dataset tracking; using nearest S3 "
+        f"Champion run {run_id} predates training_dataset tracking; using nearest S3 "
         f"version by timestamp instead: {nearest['VersionId']}"
     )
     return gold_uri, nearest["VersionId"], run_id

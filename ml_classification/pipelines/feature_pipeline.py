@@ -98,9 +98,10 @@ def run_feature_pipeline(
     logger.success(f"Features saved successfully: {len(df_features)} rows")
 
     # Capture this write's own S3 version so a later drift check (or anything else)
-    # can fetch this *exact* Gold snapshot even after output_path has been overwritten
-    # by subsequent runs -- source_dataset above only pins the Silver input, not this.
-    feature_metadata["gold_dataset"] = get_dataset_metadata(output_path)
+    # can fetch this *exact* snapshot training will read even after output_path has
+    # been overwritten by subsequent runs -- source_dataset above only pins the
+    # Silver input, not this.
+    feature_metadata["training_dataset"] = get_dataset_metadata(output_path)
 
     # Save feature metadata
     save_feature_metadata(feature_metadata, output_path)
