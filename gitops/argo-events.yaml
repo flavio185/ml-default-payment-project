@@ -29,6 +29,14 @@ metadata:
   name: drift-detected-source
   namespace: ml-credit-default
 spec:
+  # Unlike the pipeline steps (see argo-workflow.yaml's podMetadata), this
+  # pod has no sidecar.istio.io/inject: "false" of its own, so it gets an
+  # auto-injected istio-proxy with a ~2000m default CPU limit on top of its
+  # own -- easily enough on its own to blow this namespace's CPU quota.
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
   webhook:
     drift-detected:
       port: "12000"
@@ -56,13 +64,19 @@ metadata:
   name: retraining-sensor
   namespace: ml-credit-default
 spec:
-  # Without this the Sensor pod runs as the bare `default` ServiceAccount,
-  # which can't get workflowtemplates or create workflows -- the trigger
-  # fires (event received, matched) but submission fails with
-  # PermissionDenied. argo-workflow-sa is the same SA the pipeline steps
-  # themselves already run as, so it already has exactly this RBAC.
+  # serviceAccountName: without this the Sensor pod runs as the bare
+  # `default` ServiceAccount, which can't get workflowtemplates or create
+  # workflows -- the trigger fires (event received, matched) but submission
+  # fails with PermissionDenied. argo-workflow-sa is the same SA the
+  # pipeline steps themselves already run as, so it already has exactly
+  # this RBAC.
+  # metadata.annotations: same istio-proxy CPU-quota issue as the
+  # EventSource above.
   template:
     serviceAccountName: argo-workflow-sa
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
   dependencies:
     - name: drift-event
       eventSourceName: drift-detected-source
